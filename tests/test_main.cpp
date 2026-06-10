@@ -38,9 +38,9 @@ Types::PublicKeyCompressed hex_to_pubkey(const std::string& hex_str) {
 TEST(HashingTest, HASH160Generation) {
     // Test vector: HASH160 of empty string
     // SHA256("") = e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-    // RIPEMD160(SHA256("")) = b472a26670bd3784c65326673f1140081bb22014
+    // RIPEMD160(SHA256("")) = b472a266d0bd89c13706a4132ccfb16f7c3b9fcb
     std::string input_data = "";
-    Types::Hash160 expected_hash160 = hex_to_hash160("b472a26670bd3784c65326673f1140081bb22014");
+    Types::Hash160 expected_hash160 = hex_to_hash160("b472a266d0bd89c13706a4132ccfb16f7c3b9fcb");
     Types::Hash160 actual_hash160;
 
     Hashing::hash160(input_data.data(), input_data.length(), actual_hash160.data());
@@ -49,9 +49,10 @@ TEST(HashingTest, HASH160Generation) {
 
     // Test vector: HASH160 of "hello world"
     // SHA256("hello world") = a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277fe9ad9f90e
-    // RIPEMD160(SHA256("hello world")) = 98c615784ccb5fe59c8c5793ff04927a082ba403
+    // HASH160 is RIPEMD160(SHA256(data))
+    // For "hello world", RIPEMD160(SHA256("hello world")) is d7d5ee7824ff93f94c3055af9382c86c68b5ca92
     input_data = "hello world";
-    expected_hash160 = hex_to_hash160("98c615784ccb5fe59c8c5793ff04927a082ba403");
+    expected_hash160 = hex_to_hash160("d7d5ee7824ff93f94c3055af9382c86c68b5ca92");
     Hashing::hash160(input_data.data(), input_data.length(), actual_hash160.data());
     ASSERT_EQ(expected_hash160, actual_hash160);
 }
