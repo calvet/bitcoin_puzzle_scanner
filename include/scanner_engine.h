@@ -28,7 +28,8 @@ namespace Scanner {
             Types::UInt256 lower_bound,
             Types::UInt256 upper_bound,
             const Types::Hash160& target_hash160,
-            int num_threads = Config::DEFAULT_WORKER_THREADS
+            int num_threads = Config::DEFAULT_WORKER_THREADS,
+            int puzzle_number = 0
         );
         ~ScannerEngine();
 

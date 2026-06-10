@@ -17,7 +17,8 @@ namespace Scanner {
         Types::UInt256 lower_bound,
         Types::UInt256 upper_bound,
         const Types::Hash160& target_hash160,
-        int num_threads
+        int num_threads,
+        int puzzle_number
     )
         : lower_bound_(lower_bound),
           upper_bound_(upper_bound),
@@ -25,7 +26,7 @@ namespace Scanner {
           num_threads_(num_threads),
           running_(false),
           next_chunk_start_key_(lower_bound),
-          progress_manager_(lower_bound, upper_bound),
+          progress_manager_(lower_bound, upper_bound, puzzle_number, num_threads),
           checkpoint_manager_(Config::CHECKPOINT_DIR, lower_bound, upper_bound) {
 
         // Try to load checkpoint

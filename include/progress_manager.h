@@ -26,7 +26,7 @@ namespace Progress {
 
     class ProgressManager {
     public:
-        ProgressManager(Types::UInt256 lower_bound, Types::UInt256 upper_bound);
+        ProgressManager(Types::UInt256 lower_bound, Types::UInt256 upper_bound, int puzzle_number = 0, int num_threads = 1);
 
         void start_scan();
         void update_progress(uint64_t keys_scanned_in_chunk, Types::UInt256 current_chunk_end_key);
@@ -42,6 +42,8 @@ namespace Progress {
         Types::UInt256 lower_bound_;
         Types::UInt256 upper_bound_;
         Types::UInt256 total_keys_in_interval_;
+        int puzzle_number_;
+        int num_threads_;
         ScanStats stats_;
         mutable std::mutex stats_mutex_;
 

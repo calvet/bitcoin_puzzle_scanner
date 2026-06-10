@@ -6,10 +6,12 @@
 
 namespace Progress {
 
-    ProgressManager::ProgressManager(Types::UInt256 lower_bound, Types::UInt256 upper_bound)
+    ProgressManager::ProgressManager(Types::UInt256 lower_bound, Types::UInt256 upper_bound, int puzzle_number, int num_threads)
         : lower_bound_(lower_bound),
           upper_bound_(upper_bound),
-          total_keys_in_interval_(upper_bound - lower_bound + 1) {
+          total_keys_in_interval_(upper_bound - lower_bound + 1),
+          puzzle_number_(puzzle_number),
+          num_threads_(num_threads) {
     }
 
     void ProgressManager::start_scan() {
@@ -85,9 +87,9 @@ namespace Progress {
         double percent_covered = (static_cast<double>((current_stats.current_position - lower_bound_)) / static_cast<double>(total_keys_in_interval_.q0)) * 100.0; // Approximation
 
         std::cout << "========================================================\n";
-        std::cout << "           Bitcoin Puzzle #" << Config::PUZZLE_NUMBER << " CPU Scanner\n";
+        std::cout << "           Bitcoin Puzzle #" << puzzle_number_ << " CPU Scanner\n";
         std::cout << "========================================================\n";
-        std::cout << "Puzzle Number:         " << Config::PUZZLE_NUMBER << "\n";
+        std::cout << "Puzzle Number:         " << puzzle_number_ << "\n";
         std::cout << "Elapsed Time:          " << format_time(elapsed_seconds) << "\n";
         std::cout << "Keys Processed:        " << current_stats.keys_processed_total.q0 << "\n";
         std::cout << "Keys Per Second:       " << std::fixed << std::setprecision(2) << kps << "\n";
@@ -95,8 +97,8 @@ namespace Progress {
         std::cout << "Current Position:      0x" << current_stats.current_position.to_hex() << "\n";
         std::cout << "Percent of Interval:   " << std::fixed << std::setprecision(4) << percent_covered << "%\n";
         std::cout << "Est. Remaining Time:   " << format_time(estimated_remaining_seconds) << "\n";
-        std::cout << "Active Threads:        " << Config::DEFAULT_WORKER_THREADS << " (compile-time constant)\n"; // TODO: Get actual active threads
-        std::cout << "Checkpoint Status:     " << "Saving every " << Config::CHECKPOINT_INTERVAL_SECONDS << "s\n"; // TODO: Show actual status
+        std::cout << "Active Threads:        " << num_threads_ << "\n";
+        std::cout << "Checkpoint Status:     " << "Saving every " << Config::CHECKPOINT_INTERVAL_SECONDS << "s\n";
         std::cout << "Memory Usage Estimate: " << "N/A (for this educational project)\n";
         std::cout << "========================================================\n";
 

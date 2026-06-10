@@ -7,6 +7,7 @@
 #include "scanner_engine.h"
 #include "progress_manager.h"
 #include "checkpoint_manager.h"
+#include "puzzles.h"
 
 #include <array>
 #include <string>
@@ -126,15 +127,16 @@ TEST(CheckpointTest, SaveAndLoadCheckpoint) {
     std::filesystem::remove_all(test_checkpoint_dir);
 }
 
-// Test Address Verification (using the target address as a known good example)
+// Test Address Verification (using the puzzle #4 address as a known good example)
 TEST(ScannerEngineTest, AddressVerification) {
-    Types::Hash160 target_hash160 = hex_to_hash160(Config::TARGET_HASH160_HEX);
+    auto puzzle = Config::GetPuzzles().at(4);
+    Types::Hash160 target_hash160 = hex_to_hash160(puzzle.hash160);
 
     // Create a dummy ScannerEngine to access hash160_to_address
     Scanner::ScannerEngine engine(Types::UInt256(0), Types::UInt256(1), target_hash160, 1);
 
     std::string derived_address = engine.hash160_to_address(target_hash160);
-    ASSERT_EQ(Config::TARGET_ADDRESS, derived_address);
+    ASSERT_EQ(puzzle.address, derived_address);
 }
 
 // Test Progress Calculations (basic check)
