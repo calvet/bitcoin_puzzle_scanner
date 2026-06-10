@@ -82,9 +82,9 @@ TEST(ECCTest, CompressedPublicKeyAndIncrementalWalking) {
     Types::PublicKeyCompressed pub_key_two;
     ASSERT_TRUE(point.serialize_compressed(pub_key_two));
 
-    // Expected compressed public key for private key 2 (from known sources)
-    // 03c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5
-    Types::PublicKeyCompressed expected_pub_key_two = hex_to_pubkey("03c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5");
+    // Expected compressed public key for private key 2
+    // 02c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5
+    Types::PublicKeyCompressed expected_pub_key_two = hex_to_pubkey("02c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5");
     ASSERT_EQ(expected_pub_key_two, pub_key_two);
 }
 

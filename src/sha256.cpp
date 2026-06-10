@@ -50,43 +50,36 @@ namespace Hashing {
         uint32_t g = state[6];
         uint32_t h = state[7];
 
-        uint32_t w[16];
+        uint32_t w[64];
 
-        int i, j;
-        for (i = 0; i < 64; i += 16) {
-            // The original code had a bug here with update_w and the buffer
-            // This part needs careful re-implementation to correctly handle the message schedule (W array)
-            // For simplicity and correctness, we'll re-initialize w for each 16-word block
-            // and then apply the message schedule update for the remaining 48 words.
+        int j;
+        // Initialize first 16 words from buffer
+        for (j = 0; j < 16; j++) {
+            w[j] =
+                ((uint32_t)sha->buffer[j * 4 + 0] << 24) |
+                ((uint32_t)sha->buffer[j * 4 + 1] << 16) |
+                ((uint32_t)sha->buffer[j * 4 + 2] << 8) |
+                ((uint32_t)sha->buffer[j * 4 + 3]);
+        }
 
-            // Initialize first 16 words from buffer
-            for (j = 0; j < 16; j++) {
-                w[j] =
-                    ((uint32_t)sha->buffer[i * 4 + j * 4 + 0] << 24) |
-                    ((uint32_t)sha->buffer[i * 4 + j * 4 + 1] << 16) |
-                    ((uint32_t)sha->buffer[i * 4 + j * 4 + 2] << 8) |
-                    ((uint32_t)sha->buffer[i * 4 + j * 4 + 3]);
-            }
+        // Extend to 64 words
+        for (j = 16; j < 64; j++) {
+            uint32_t s0 = (rotr(w[j - 15], 7) ^ rotr(w[j - 15], 18) ^ (w[j - 15] >> 3));
+            uint32_t s1 = (rotr(w[j - 2], 17) ^ rotr(w[j - 2], 19) ^ (w[j - 2] >> 10));
+            w[j] = w[j - 16] + s0 + w[j - 7] + s1;
+        }
 
-            // Extend to 64 words
-            for (j = 16; j < 64; j++) {
-                uint32_t s0 = (rotr(w[(j - 15) & 15], 7) ^ rotr(w[(j - 15) & 15], 18) ^ (w[(j - 15) & 15] >> 3));
-                uint32_t s1 = (rotr(w[(j - 2) & 15], 17) ^ rotr(w[(j - 2) & 15], 19) ^ (w[(j - 2) & 15] >> 10));
-                w[j & 15] = w[(j - 16) & 15] + s0 + w[(j - 7) & 15] + s1;
-            }
-
-            for (j = 0; j < 64; j++) {
-                uint32_t temp1 = h + step1(e, f, g) + k[j] + w[j & 15];
-                uint32_t temp2 = step2(a, b, c);
-                h = g;
-                g = f;
-                f = e;
-                e = d + temp1;
-                d = c;
-                c = b;
-                b = a;
-                a = temp1 + temp2;
-            }
+        for (j = 0; j < 64; j++) {
+            uint32_t temp1 = h + step1(e, f, g) + k[j] + w[j];
+            uint32_t temp2 = step2(a, b, c);
+            h = g;
+            g = f;
+            f = e;
+            e = d + temp1;
+            d = c;
+            c = b;
+            b = a;
+            a = temp1 + temp2;
         }
 
         state[0] += a;
