@@ -81,7 +81,7 @@ int main() {
     std::cout << Config::current_time() << "Target Address: " << target_address << "\n";
     std::cout << Config::current_time() << "Target HASH160: " << target_hash_hex << "\n";
     std::cout << Config::current_time() << "Threads: " << num_threads << "\n";
-    std::cout << Config::current_time() << "Search Range: 0x" << lower_bound.to_hex() << " to 0x" << upper_bound.to_hex() << "\n\n";
+    std::cout << Config::current_time() << "Search Range: 0x" << lower_bound.to_hex() << " to 0x" << upper_bound.to_hex() << "\n";
 
     Types::Hash160 target_hash160_bytes;
     // Convert hex string to bytes for target_hash160_bytes
@@ -107,7 +107,7 @@ int main() {
             std::cout << Config::current_time() << "Private Key (Hex):     " << stats.found_private_key_hex << "\n";
             std::cout << Config::current_time() << "Public Key (Comp.):    " << stats.found_public_key_compressed_hex << "\n";
             std::cout << Config::current_time() << "Derived Address:       " << stats.found_address << "\n";
-            std::cout << Config::current_time() << "========================================================\n\n";
+            std::cout << Config::current_time() << "========================================================\n";
 
             std::string filename = "FOUND_PUZZLE_" + std::to_string(puzzle_num) + ".txt";
             std::ofstream out_file(filename);
