@@ -19,7 +19,7 @@
 #include <cstring>
 #include "SECP256k1.h"
 #include "Point.h"
-#include "../util.h" // We will create this or change it
+#include "util.h" // We will create this or change it
 #include "sha256_keyhunt.h"
 #include "ripemd160_keyhunt.h"
 

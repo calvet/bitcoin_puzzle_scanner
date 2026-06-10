@@ -24,7 +24,12 @@ namespace _sha256sse
 {
 
 
-#ifdef WIN64
+#ifdef _MSC_VER
+#include <stdlib.h>
+#define __builtin_bswap32 _byteswap_ulong
+#endif
+
+#ifdef _MSC_VER
   static const __declspec(align(16)) uint32_t _init[] = {
 #else
   static const uint32_t _init[] __attribute__ ((aligned (16))) = {
@@ -87,9 +92,9 @@ namespace _sha256sse
   w15 = add4(s1(w13), w8, s0(w0), w15);
 
   // Initialise state
-  void Initialize(__m128i *s) {
-    memcpy(s, _init, sizeof(_init));
-  }
+    void Initialize(__m128i *s) {
+      memcpy(s, _init, 128); // 8 vectors of 4x uint32
+    }
 
   // Perform 4 SHA in parallel using SSE2
   void Transform(__m128i *s, uint32_t *b0, uint32_t *b1, uint32_t *b2, uint32_t *b3)
@@ -561,7 +566,7 @@ void sha256sse_checksum(uint32_t *i0, uint32_t *i1, uint32_t *i2, uint32_t *i3,
   _sha256sse::Initialize(s);
   _sha256sse::Transform2(s, i0, i1, i2, i3);
 
-#ifndef WIN64
+#ifndef _MSC_VER
   uint32_t *s32 = (uint32_t *)(&s[0]);
   *((uint32_t *)d0) = __builtin_bswap32(s32[3]);
   *((uint32_t *)d1) = __builtin_bswap32(s32[2]);

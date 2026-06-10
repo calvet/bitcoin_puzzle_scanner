@@ -26,6 +26,7 @@
 #ifdef _MSC_VER
 #include <stdlib.h>
 #define __builtin_bswap32 _byteswap_ulong
+#define __builtin_bswap64 _byteswap_uint64
 #endif
 
 #define BSWAP
@@ -36,7 +37,7 @@ namespace _sha256
 
   static const unsigned char pad[64] = { 0x80 };
 
-#ifndef WIN64
+#ifndef _MSC_VER
 #define _byteswap_ulong __builtin_bswap32
 #define _byteswap_uint64 __builtin_bswap64
 inline uint32_t _rotr(uint32_t x, uint8_t r) {

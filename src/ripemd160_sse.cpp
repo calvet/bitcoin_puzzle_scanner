@@ -22,7 +22,7 @@
 // Internal SSE RIPEMD-160 implementation.
 namespace ripemd160sse {
 
-#ifdef WIN64
+#ifdef _MSC_VER
   static const __declspec(align(16)) uint32_t _init[] = {
 #else
   static const uint32_t _init[] __attribute__ ((aligned (16))) = {
@@ -42,7 +42,7 @@ namespace ripemd160sse {
 
 #define ROL(x,n) _mm_or_si128( _mm_slli_epi32(x, n) , _mm_srli_epi32(x, 32 - n) )
 
-#ifdef WIN64
+#ifdef _MSC_VER
 
 #define not(x) _mm_andnot_si128(x, _mm_cmpeq_epi32(_mm_setzero_si128(), _mm_setzero_si128()))
 #define f1(x,y,z) _mm_xor_si128(x, _mm_xor_si128(y, z))
@@ -85,7 +85,7 @@ namespace ripemd160sse {
 
   // Initialize RIPEMD-160 state
   void Initialize(__m128i *s) {
-    memcpy(s, _init, sizeof(_init));
+    memcpy(s, _init, 80); // 5 vectors of 4x uint32
   }
 
   // Perform 4 RIPE in parallel using SSE2
@@ -297,7 +297,7 @@ namespace ripemd160sse {
 
 } // namespace ripemd160sse
 
-#ifdef WIN64
+#ifdef _MSC_VER
 
 #define DEPACK(d,i) \
 ((uint32_t *)d)[0] = s[0].m128i_u32[i]; \
@@ -345,7 +345,7 @@ void ripemd160sse_32(
 
   ripemd160sse::Transform(s, bs);
 
-#ifndef WIN64
+#ifndef _MSC_VER
   uint32_t *s0 = (uint32_t *)&s[0];
   uint32_t *s1 = (uint32_t *)&s[1];
   uint32_t *s2 = (uint32_t *)&s[2];
