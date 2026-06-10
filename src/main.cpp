@@ -34,9 +34,9 @@ Types::UInt256 get_upper_bound(int N) {
 }
 
 int main() {
-    std::cout << Config::current_time() << "Bem-vindo ao Bitcoin Puzzle Scanner!\n";
-    std::cout << Config::current_time() << "Escolha o numero do Puzzle (1 a 160)\n";
-    std::cout << Config::current_time() << "[Nota: O Puzzle #71 e o mais facil atualmente disponivel com saldo!]\n";
+    std::cout << Config::current_time() << "Welcome to Bitcoin Puzzle Scanner!\n";
+    std::cout << Config::current_time() << "Choose the Puzzle number (1 to 160)\n";
+    std::cout << Config::current_time() << "[Note: Puzzle #71 is currently the easiest available with balance!]\n";
     std::cout << Config::current_time() << "Puzzle [Default 71]: ";
     std::string input;
     std::getline(std::cin, input);
@@ -50,7 +50,7 @@ int main() {
 
     const auto& puzzles = Config::GetPuzzles();
     if (puzzles.find(puzzle_num) == puzzles.end()) {
-        std::cerr << Config::current_time() << "Erro: Informacoes do Puzzle " << puzzle_num << " nao encontradas.\n";
+        std::cerr << Config::current_time() << "Error: Information for Puzzle " << puzzle_num << " not found.\n";
         return 1;
     }
     
@@ -59,13 +59,13 @@ int main() {
     std::string target_address = puzzle_info.address;
 
     if (puzzle_info.solved) {
-        std::cout << Config::current_time() << "[AVISO] O Puzzle #" << puzzle_num << " ja consta como RESOLVIDO no diretorio!\n";
+        std::cout << Config::current_time() << "[WARNING] Puzzle #" << puzzle_num << " is already marked as SOLVED in the directory!\n";
     }
 
     int max_threads = std::thread::hardware_concurrency();
     if (max_threads == 0) max_threads = 4;
     int num_threads = max_threads;
-    std::cout << Config::current_time() << "Quantos threads deseja utilizar? (Max: " << max_threads << ") [Default: " << max_threads << "]: ";
+    std::cout << Config::current_time() << "How many threads do you want to use? (Max: " << max_threads << ") [Default: " << max_threads << "]: ";
     std::getline(std::cin, input);
     if (!input.empty()) {
         try { num_threads = std::stoi(input); } catch (...) {}
@@ -76,8 +76,8 @@ int main() {
     Types::UInt256 lower_bound = get_lower_bound(puzzle_num);
     Types::UInt256 upper_bound = get_upper_bound(puzzle_num);
 
-    std::cout << Config::current_time() << "\nIniciando Scanner...\n";
-    std::cout << Config::current_time() << "Puzzle: #" << puzzle_num << " (Status: " << (puzzle_info.solved ? "RESOLVIDO" : "NAO RESOLVIDO") << ")\n";
+    std::cout << Config::current_time() << "Starting Scanner...\n";
+    std::cout << Config::current_time() << "Puzzle: #" << puzzle_num << " (Status: " << (puzzle_info.solved ? "SOLVED" : "NOT SOLVED") << ")\n";
     std::cout << Config::current_time() << "Target Address: " << target_address << "\n";
     std::cout << Config::current_time() << "Target HASH160: " << target_hash_hex << "\n";
     std::cout << Config::current_time() << "Threads: " << num_threads << "\n";
@@ -102,7 +102,7 @@ int main() {
 
         auto stats = engine.get_scan_stats();
         if (stats.match_found) {
-            std::cout << Config::current_time() << "\n========================================================\n";
+            std::cout << Config::current_time() << "========================================================\n";
             std::cout << Config::current_time() << "MATCH FOUND!\n";
             std::cout << Config::current_time() << "Private Key (Hex):     " << stats.found_private_key_hex << "\n";
             std::cout << Config::current_time() << "Public Key (Comp.):    " << stats.found_public_key_compressed_hex << "\n";
@@ -112,10 +112,10 @@ int main() {
             std::string filename = "FOUND_PUZZLE_" + std::to_string(puzzle_num) + ".txt";
             std::ofstream out_file(filename);
             if (out_file.is_open()) {
-                out_file << "MATCH FOUND FOR PUZZLE #" << puzzle_num << "\n";
-                out_file << "Private Key (Hex):     " << stats.found_private_key_hex << "\n";
-                out_file << "Public Key (Comp.):    " << stats.found_public_key_compressed_hex << "\n";
-                out_file << "Derived Address:       " << stats.found_address << "\n";
+                out_file << Config::current_time() << "MATCH FOUND FOR PUZZLE #" << puzzle_num << "\n";
+                out_file << Config::current_time() << "Private Key (Hex):     " << stats.found_private_key_hex << "\n";
+                out_file << Config::current_time() << "Public Key (Comp.):    " << stats.found_public_key_compressed_hex << "\n";
+                out_file << Config::current_time() << "Derived Address:       " << stats.found_address << "\n";
                 out_file.close();
                 std::cout << Config::current_time() << "Details saved to " << filename << "\n";
             } else {
@@ -128,7 +128,7 @@ int main() {
         return 1;
     }
 
-    std::cout << Config::current_time() << "\nScanner finished.\n";
+    std::cout << Config::current_time() << "Scanner finished.\n";
     std::cout << Config::current_time() << "Press Enter to exit...";
     std::string dummy;
     std::getline(std::cin, dummy);

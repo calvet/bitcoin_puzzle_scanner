@@ -29,9 +29,9 @@ for block in blocks:
         address = addr_match.group(1)
         hash160 = get_hash160(address)
         
-        status = "UNSOLVED"
-        if 'SOLVED' in block[:500]:
-            status = "SOLVED"
+        status = "SOLVED"
+        if 'UNSOLVED' in block[:1500]:
+            status = "UNSOLVED"
             
         puzzles[num] = {"address": address, "hash160": hash160, "status": status}
 

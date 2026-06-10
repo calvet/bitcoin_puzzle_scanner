@@ -34,11 +34,16 @@ namespace Scanner {
             Progress::ScanStats loaded_stats;
             std::vector<Checkpoint::WorkerCheckpointState> loaded_worker_states;
             if (checkpoint_manager_.load_latest_checkpoint(loaded_stats, loaded_worker_states)) {
-                std::cout << Config::current_time() << "Resuming from checkpoint. Keys processed: " << loaded_stats.keys_processed_total.q0 << "\n";
-                progress_manager_.start_scan(); // Re-initialize start time
-                progress_manager_.update_progress(loaded_stats.keys_processed_total.q0, loaded_stats.current_position);
-                next_chunk_start_key_ = loaded_stats.current_position;
-                // TODO: Distribute loaded_worker_states to individual workers if needed
+                if (loaded_stats.current_position >= lower_bound_ && loaded_stats.current_position <= upper_bound_) {
+                    std::cout << Config::current_time() << "Resuming from checkpoint. Keys processed: " << loaded_stats.keys_processed_total.q0 << "\n";
+                    progress_manager_.start_scan(); // Re-initialize start time
+                    progress_manager_.update_progress(loaded_stats.keys_processed_total.q0, loaded_stats.current_position);
+                    next_chunk_start_key_ = loaded_stats.current_position;
+                    // TODO: Distribute loaded_worker_states to individual workers if needed
+                } else {
+                    std::cerr << Config::current_time() << "Checkpoint is for a different puzzle or range. Starting new scan.\n";
+                    progress_manager_.start_scan();
+                }
             } else {
                 std::cerr << Config::current_time() << "Failed to load checkpoint. Starting new scan.\n";
                 progress_manager_.start_scan();
@@ -195,9 +200,9 @@ namespace Scanner {
 
                 // Compare against target
                 if (std::equal(current_hash160.begin(), current_hash160.end(), target_hash160_.begin())) {
-                    std::cout << Config::current_time() << "\nMatch found by worker " << worker_id << "!\n";
+                    std::cout << Config::current_time() << "Match found by worker " << worker_id << "!\n";
                     progress_manager_.report_match(
-                        private_key_to_hex(priv_key),
+                        private_key_to_hex(uint256_to_private_key(current_key_value)),
                         public_key_to_hex(pub_key_compressed),
                         hash160_to_address(current_hash160)
                     );
