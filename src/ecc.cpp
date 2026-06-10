@@ -8,11 +8,7 @@ namespace ECC {
     bool generate_public_key(const Context& ctx, const Types::PrivateKey& priv_key, Types::PublicKeyCompressed& pub_key) {
         Int pk;
         pk.Set32Bytes(const_cast<unsigned char*>(priv_key.data()));
-        Point p = ctx.get()->ComputePublicKey(&pk);
-        ctx.get()->GetPublicKeyHex(true, p, reinterpret_cast<char*>(pub_key.data()));
-        // Wait, GetPublicKeyHex(true, p, dst) writes 66 chars of hex!
-        // But Types::PublicKeyCompressed is 33 BYTES, not 66 chars of hex string!
-        // I need to use GetPublicKeyRaw instead.
+        ::Point p = ctx.get()->ComputePublicKey(&pk);
         ctx.get()->GetPublicKeyRaw(true, p, reinterpret_cast<char*>(pub_key.data()));
         return true;
     }
@@ -35,7 +31,7 @@ namespace ECC {
     }
 
     bool PointWrapper::serialize_compressed(Types::PublicKeyCompressed& pub_key) const {
-        Point p = pubkey_;
+        ::Point p = pubkey_;
         ctx_.get()->GetPublicKeyRaw(true, p, reinterpret_cast<char*>(pub_key.data()));
         return true;
     }

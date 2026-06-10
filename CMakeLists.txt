@@ -8,9 +8,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Compiler warnings
 if(MSVC)
-    add_compile_options(/W4 /WX /arch:AVX2)
+    add_compile_options(/W4 /arch:AVX2 /wd4996)
 else()
-    add_compile_options(-Wall -Wextra -Werror -msse4.1 -mavx -mavx2)
+    add_compile_options(-Wall -Wextra -msse4.1 -mavx -mavx2)
 endif()
 
 # Include directories

@@ -23,6 +23,11 @@
 
 #include "sha256_keyhunt.h"
 
+#ifdef _MSC_VER
+#include <stdlib.h>
+#define __builtin_bswap32 _byteswap_ulong
+#endif
+
 #define BSWAP
 
 /// Internal SHA-256 implementation.

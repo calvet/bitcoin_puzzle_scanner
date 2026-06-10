@@ -43,7 +43,7 @@ namespace ECC {
 
     private:
         const Context& ctx_;
-        Point pubkey_;
+        ::Point pubkey_;
     };
     
     // Alias to match old API
