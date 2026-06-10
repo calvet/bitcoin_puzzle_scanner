@@ -816,7 +816,7 @@ void Int::Div(Int *a,Int *mod) {
     uint32_t nm = rem.bits[sb-j];
 
     if (nh == _dh) {
-      qhat = ~0;
+      qhat = ~0U;
       qrem = nh + nm;
       skipCorrection = qrem < nh;
     } else {

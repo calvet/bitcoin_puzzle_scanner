@@ -112,7 +112,7 @@ Point Secp256K1::Negation(Point &p) {
 
 
 bool Secp256K1::ParsePublicKeyHex(char *str,Point &ret,bool &isCompressed) {
-  int len = strlen(str);
+  int len = (int)strlen(str);
   ret.Clear();
   if (len < 2) {
     printf("ParsePublicKeyHex: Error invalid public key specified (66 or 130 character length)\n");
@@ -486,16 +486,16 @@ bool Secp256K1::EC(Point &p) {
   return _s.IsZero(); // ( ((pow2(y) - (pow3(x) + 7)) % P) == 0 );
 }
 
-Point Secp256K1::ScalarMultiplication(Point &P,Int *scalar)	{
+Point Secp256K1::ScalarMultiplication(Point &p_in,Int *scalar)	{
 	Point R,Q,T;
 	int  no_of_bits, loop;
 	no_of_bits = scalar->GetBitLength();
 	R.Clear();
 	R.z.SetInt32(1);
 	if(!scalar->IsZero())	{
-		Q.Set(P);
+		Q.Set(p_in);
 		if(scalar->GetBit(0) == 1)	{
-			R.Set(P);
+			R.Set(p_in);
 		}
 		for(loop = 1; loop < no_of_bits; loop++) {
 			T = Double(Q);

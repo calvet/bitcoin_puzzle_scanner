@@ -28,7 +28,7 @@ char *rtrim(char *str, const char *seps)	{
 	if (seps == NULL) {
 		seps = "\t\n\v\f\r ";
 	}
-	i = strlen(str) - 1;
+	i = (int)strlen(str) - 1;
 	while (i >= 0 && strchr(seps, str[i]) != NULL) {
 		str[i] = '\0';
 		i--;
@@ -128,7 +128,7 @@ int hexs2bin(char *hex, unsigned char *out)	{
 	if (hex == NULL || *hex == '\0' || out == NULL)
 		return 0;
 
-	len = strlen(hex);
+	len = (int)strlen(hex);
 	if (len % 2 != 0)
 		return 0;
 	len /= 2;
@@ -169,7 +169,7 @@ void addItemList(char *data, List *l)	{
 int isValidHex(char *data)	{
 	char c;
 	int len,i,valid = 1;
-	len = strlen(data);
+	len = (int)strlen(data);
 	for(i = 0 ; i <  len && valid ;i++ )	{
 		c = data[i];
 		valid = ( (c >= '0' && c <='9') || (c >= 'A' && c <='F' ) || (c >= 'a' && c <='f' ) );
