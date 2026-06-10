@@ -65,7 +65,7 @@ add_library(ScannerCore STATIC
     src/progress_manager.cpp
     src/checkpoint_manager.cpp
     src/scanner_engine.cpp
-    src/util.c
+    src/util.cpp
     src/secp256k1/Int.cpp
     src/secp256k1/IntGroup.cpp
     src/secp256k1/IntMod.cpp
