@@ -17,16 +17,16 @@
 namespace Scanner {
 
     struct WorkerConfig {
-        uint64_t start_key;
-        uint64_t end_key;
+        Types::UInt256 start_key;
+        Types::UInt256 end_key;
         int worker_id;
     };
 
     class ScannerEngine {
     public:
         ScannerEngine(
-            uint64_t lower_bound,
-            uint64_t upper_bound,
+            Types::UInt256 lower_bound,
+            Types::UInt256 upper_bound,
             const Types::Hash160& target_hash160,
             int num_threads = Config::DEFAULT_WORKER_THREADS
         );
@@ -36,14 +36,15 @@ namespace Scanner {
         void stop();
 
     private:
-        uint64_t lower_bound_;
-        uint64_t upper_bound_;
+        Types::UInt256 lower_bound_;
+        Types::UInt256 upper_bound_;
         Types::Hash160 target_hash160_;
         int num_threads_;
 
         std::vector<std::thread> workers_;
         std::atomic<bool> running_;
-        std::atomic<uint64_t> next_chunk_start_key_;
+        Types::UInt256 next_chunk_start_key_;
+        std::mutex chunk_mutex_;
 
         ECC::Context ecc_context_;
         Progress::ProgressManager progress_manager_;
@@ -55,11 +56,12 @@ namespace Scanner {
         void worker_thread_func(int worker_id);
         void checkpoint_thread_func();
 
-        // Helper to convert uint64_t to PrivateKey (Types::PrivateKey)
-        Types::PrivateKey uint64_to_private_key(uint64_t key_value);
+        // Helper to convert UInt256 to PrivateKey (Types::PrivateKey)
+        Types::PrivateKey uint256_to_private_key(const Types::UInt256& key_value);
         std::string private_key_to_hex(const Types::PrivateKey& priv_key);
         std::string public_key_to_hex(const Types::PublicKeyCompressed& pub_key);
         std::string hash160_to_hex(const Types::Hash160& hash);
+    public:
         std::string hash160_to_address(const Types::Hash160& hash);
     };
 

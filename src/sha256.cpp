@@ -1,5 +1,6 @@
 #include "sha256.h"
 #include <string.h>
+#include "ripemd160.h"
 
 namespace Hashing {
 
@@ -162,7 +163,7 @@ namespace Hashing {
 
     void sha256_finalize_bytes(sha256_context *sha, uint8_t *dst_bytes32) {
         uint8_t *ptr = (uint8_t*)dst_bytes32;
-        int i, j;
+        int i;
         sha256_finalize(sha);
 
         for (i = 0; i < 8; i++) {
@@ -187,8 +188,6 @@ namespace Hashing {
         sha256_append(&sha, src, n_bytes);
         sha256_finalize_bytes(&sha, dst_bytes32);
     }
-
-    #include "ripemd160.h"
 
     void hash160(const void *src, size_t n_bytes, uint8_t *dst_hash160) {
         uint8_t sha256_result[SHA256_BYTES_SIZE];

@@ -23,6 +23,16 @@ Types::Hash160 hex_to_hash160(const std::string& hex_str) {
     return hash;
 }
 
+// Helper to convert hex string to compressed public key
+Types::PublicKeyCompressed hex_to_pubkey(const std::string& hex_str) {
+    Types::PublicKeyCompressed pubkey;
+    for (size_t i = 0; i < hex_str.length(); i += 2) {
+        std::string byteString = hex_str.substr(i, 2);
+        pubkey[i / 2] = static_cast<uint8_t>(std::stoul(byteString, nullptr, 16));
+    }
+    return pubkey;
+}
+
 // Test HASH160 generation
 TEST(HashingTest, HASH160Generation) {
     // Test vector: HASH160 of empty string
@@ -62,7 +72,7 @@ TEST(ECCTest, CompressedPublicKeyAndIncrementalWalking) {
 
     // Expected compressed public key for private key 1 (from known sources)
     // 0279BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798
-    Types::PublicKeyCompressed expected_pub_key_one = hex_to_hash160("0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798");
+    Types::PublicKeyCompressed expected_pub_key_one = hex_to_pubkey("0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798");
     ASSERT_EQ(expected_pub_key_one, pub_key_one);
 
     // Test incremental point walking (P = P + G)
@@ -73,7 +83,7 @@ TEST(ECCTest, CompressedPublicKeyAndIncrementalWalking) {
 
     // Expected compressed public key for private key 2 (from known sources)
     // 03c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5
-    Types::PublicKeyCompressed expected_pub_key_two = hex_to_hash160("03c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5");
+    Types::PublicKeyCompressed expected_pub_key_two = hex_to_pubkey("03c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5");
     ASSERT_EQ(expected_pub_key_two, pub_key_two);
 }
 
@@ -83,8 +93,8 @@ TEST(CheckpointTest, SaveAndLoadCheckpoint) {
     std::string test_checkpoint_dir = "test_checkpoints";
     std::filesystem::create_directories(test_checkpoint_dir);
 
-    uint64_t lower = 1000;
-    uint64_t upper = 2000;
+    Types::UInt256 lower(1000);
+    Types::UInt256 upper(2000);
     Checkpoint::CheckpointManager mgr(test_checkpoint_dir, lower, upper);
 
     Progress::ScanStats stats;
@@ -93,8 +103,8 @@ TEST(CheckpointTest, SaveAndLoadCheckpoint) {
     stats.start_time = std::chrono::steady_clock::now() - std::chrono::seconds(100);
 
     std::vector<Checkpoint::WorkerCheckpointState> worker_states(Config::DEFAULT_WORKER_THREADS);
-    worker_states[0].current_private_key_value = 1200;
-    worker_states[1].current_private_key_value = 1400;
+    worker_states[0].current_private_key_value = Types::UInt256(1200);
+    worker_states[1].current_private_key_value = Types::UInt256(1400);
 
     mgr.save_checkpoint(stats, worker_states);
 
@@ -103,10 +113,10 @@ TEST(CheckpointTest, SaveAndLoadCheckpoint) {
     std::vector<Checkpoint::WorkerCheckpointState> loaded_worker_states;
     ASSERT_TRUE(mgr.load_latest_checkpoint(loaded_stats, loaded_worker_states));
 
-    ASSERT_EQ(stats.keys_processed_total.load(), loaded_stats.keys_processed_total.load());
-    ASSERT_EQ(stats.current_position.load(), loaded_stats.current_position.load());
+    ASSERT_EQ(stats.keys_processed_total, loaded_stats.keys_processed_total);
+    ASSERT_EQ(stats.current_position, loaded_stats.current_position);
     // Check elapsed time (might have slight difference due to system clock)
-    ASSERT_NEAR(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - loaded_stats.start_time).count(), 100, 2);
+    ASSERT_NEAR(static_cast<double>(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - loaded_stats.start_time).count()), 100.0, 2.0);
 
     ASSERT_EQ(worker_states.size(), loaded_worker_states.size());
     ASSERT_EQ(worker_states[0].current_private_key_value, loaded_worker_states[0].current_private_key_value);
@@ -121,7 +131,7 @@ TEST(ScannerEngineTest, AddressVerification) {
     Types::Hash160 target_hash160 = hex_to_hash160(Config::TARGET_HASH160_HEX);
 
     // Create a dummy ScannerEngine to access hash160_to_address
-    Scanner::ScannerEngine engine(0, 1, target_hash160, 1);
+    Scanner::ScannerEngine engine(Types::UInt256(0), Types::UInt256(1), target_hash160, 1);
 
     std::string derived_address = engine.hash160_to_address(target_hash160);
     ASSERT_EQ(Config::TARGET_ADDRESS, derived_address);
@@ -129,19 +139,19 @@ TEST(ScannerEngineTest, AddressVerification) {
 
 // Test Progress Calculations (basic check)
 TEST(ProgressManagerTest, ProgressCalculations) {
-    uint64_t lower = 0;
-    uint64_t upper = 1000000;
+    Types::UInt256 lower(0);
+    Types::UInt256 upper(1000000);
     Progress::ProgressManager pm(lower, upper);
     pm.start_scan();
 
-    pm.update_progress(100000, 100000);
+    pm.update_progress(100000, Types::UInt256(100000));
     // In a real scenario, time would pass, but for unit test, we check values directly
-    ASSERT_EQ(pm.get_stats().keys_processed_total.load(), 100000);
-    ASSERT_EQ(pm.get_stats().current_position.load(), 100000);
+    ASSERT_EQ(pm.get_stats().keys_processed_total, Types::UInt256(100000));
+    ASSERT_EQ(pm.get_stats().current_position, Types::UInt256(100000));
 
-    pm.update_progress(200000, 300000);
-    ASSERT_EQ(pm.get_stats().keys_processed_total.load(), 300000);
-    ASSERT_EQ(pm.get_stats().current_position.load(), 300000);
+    pm.update_progress(200000, Types::UInt256(300000));
+    ASSERT_EQ(pm.get_stats().keys_processed_total, Types::UInt256(300000));
+    ASSERT_EQ(pm.get_stats().current_position, Types::UInt256(300000));
 }
 
 int main(int argc, char **argv) {

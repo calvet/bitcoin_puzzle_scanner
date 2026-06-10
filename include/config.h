@@ -1,5 +1,5 @@
 #ifndef BITCOIN_PUZZLE_SCANNER_CONFIG_H
-#define BITCOIN_PUZZIN_PUZZLE_SCANNER_CONFIG_H
+#define BITCOIN_PUZZLE_SCANNER_CONFIG_H
 
 #include <string>
 #include <cstdint>
@@ -16,8 +16,8 @@ namespace Config {
     // Represented as 64-bit unsigned integers (uint64_t) for simplicity in C++
     // Note: Bitcoin private keys are 256-bit, but for this puzzle, the range is within 64-bit for demonstration.
     // A full implementation would use a bignum library for 256-bit integers.
-    const uint64_t LOWER_BOUND = 0x4000000000000000ULL;
-    const uint64_t UPPER_BOUND = 0x7FFFFFFFFFFFFFFFFFULL;
+    const std::string LOWER_BOUND = "400000000000000000";
+    const std::string UPPER_BOUND = "7FFFFFFFFFFFFFFFFF";
 
     // Threading configuration
     const int DEFAULT_WORKER_THREADS = 2; // Default to 2 worker threads

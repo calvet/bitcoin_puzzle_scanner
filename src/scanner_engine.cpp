@@ -14,8 +14,8 @@ std::string to_base58(const std::vector<uint8_t>& data);
 namespace Scanner {
 
     ScannerEngine::ScannerEngine(
-        uint64_t lower_bound,
-        uint64_t upper_bound,
+        Types::UInt256 lower_bound,
+        Types::UInt256 upper_bound,
         const Types::Hash160& target_hash160,
         int num_threads
     )
@@ -33,10 +33,10 @@ namespace Scanner {
             Progress::ScanStats loaded_stats;
             std::vector<Checkpoint::WorkerCheckpointState> loaded_worker_states;
             if (checkpoint_manager_.load_latest_checkpoint(loaded_stats, loaded_worker_states)) {
-                std::cout << "Resuming from checkpoint. Keys processed: " << loaded_stats.keys_processed_total.load() << "\n";
+                std::cout << "Resuming from checkpoint. Keys processed: " << loaded_stats.keys_processed_total.q0 << "\n";
                 progress_manager_.start_scan(); // Re-initialize start time
-                progress_manager_.update_progress(loaded_stats.keys_processed_total.load(), loaded_stats.current_position.load());
-                next_chunk_start_key_ = loaded_stats.current_position.load();
+                progress_manager_.update_progress(loaded_stats.keys_processed_total.q0, loaded_stats.current_position);
+                next_chunk_start_key_ = loaded_stats.current_position;
                 // TODO: Distribute loaded_worker_states to individual workers if needed
             } else {
                 std::cerr << "Failed to load checkpoint. Starting new scan.\n";
@@ -80,18 +80,21 @@ namespace Scanner {
         }
     }
 
-    Types::PrivateKey ScannerEngine::uint64_to_private_key(uint64_t key_value) {
+    Types::PrivateKey ScannerEngine::uint256_to_private_key(const Types::UInt256& key_value) {
         Types::PrivateKey priv_key;
         priv_key.fill(0);
         for (int i = 0; i < 8; ++i) {
-            priv_key[31 - i] = (key_value >> (i * 8)) & 0xFF;
+            priv_key[31 - i] = (key_value.q0 >> (i * 8)) & 0xFF;
+            priv_key[23 - i] = (key_value.q1 >> (i * 8)) & 0xFF;
+            priv_key[15 - i] = (key_value.q2 >> (i * 8)) & 0xFF;
+            priv_key[7 - i] = (key_value.q3 >> (i * 8)) & 0xFF;
         }
         return priv_key;
     }
 
     std::string ScannerEngine::private_key_to_hex(const Types::PrivateKey& priv_key) {
         std::stringstream ss;
-        ss << std::hex << std::setfill("0");
+        ss << std::hex << std::setfill('0');
         for (uint8_t byte : priv_key) {
             ss << std::setw(2) << static_cast<int>(byte);
         }
@@ -100,7 +103,7 @@ namespace Scanner {
 
     std::string ScannerEngine::public_key_to_hex(const Types::PublicKeyCompressed& pub_key) {
         std::stringstream ss;
-        ss << std::hex << std::setfill("0");
+        ss << std::hex << std::setfill('0');
         for (uint8_t byte : pub_key) {
             ss << std::setw(2) << static_cast<int>(byte);
         }
@@ -109,7 +112,7 @@ namespace Scanner {
 
     std::string ScannerEngine::hash160_to_hex(const Types::Hash160& hash) {
         std::stringstream ss;
-        ss << std::hex << std::setfill("0");
+        ss << std::hex << std::setfill('0');
         for (uint8_t byte : hash) {
             ss << std::setw(2) << static_cast<int>(byte);
         }
@@ -138,7 +141,7 @@ namespace Scanner {
         ECC::Context worker_ecc_context;
         ECC::Point current_point(worker_ecc_context);
 
-        uint64_t current_key_value = 0;
+        Types::UInt256 current_key_value;
         Types::PrivateKey priv_key;
         Types::PublicKeyCompressed pub_key_compressed;
         Types::Hash160 current_hash160;
@@ -151,15 +154,23 @@ namespace Scanner {
         const uint64_t CHUNK_SIZE = 100000; // Process keys in chunks
 
         while (running_.load() && !progress_manager_.is_match_found()) {
-            uint64_t chunk_start_key = next_chunk_start_key_.fetch_add(CHUNK_SIZE);
-            uint64_t chunk_end_key = std::min(chunk_start_key + CHUNK_SIZE - 1, upper_bound_);
+            Types::UInt256 chunk_start_key;
+            {
+                std::lock_guard<std::mutex> lock(chunk_mutex_);
+                chunk_start_key = next_chunk_start_key_;
+                next_chunk_start_key_ += CHUNK_SIZE;
+            }
+            Types::UInt256 chunk_end_key = chunk_start_key + (CHUNK_SIZE - 1);
+            if (chunk_end_key > upper_bound_) {
+                chunk_end_key = upper_bound_;
+            }
 
             if (chunk_start_key > upper_bound_) {
                 break; // All keys processed
             }
 
             // Initialize current_point for this chunk
-            priv_key = uint64_to_private_key(chunk_start_key);
+            priv_key = uint256_to_private_key(chunk_start_key);
             if (!current_point.init_from_private_key(priv_key)) {
                 std::cerr << "Worker " << worker_id << ": Failed to initialize point from private key.\n";
                 running_ = false; // Critical error, stop all
@@ -206,7 +217,7 @@ namespace Scanner {
                 worker_checkpoint_state.current_private_key_value = current_key_value;
             }
 
-            progress_manager_.update_progress(chunk_end_key - chunk_start_key + 1, chunk_end_key);
+            progress_manager_.update_progress((chunk_end_key - chunk_start_key) + 1, chunk_end_key);
         }
     }
 
@@ -225,7 +236,7 @@ namespace Scanner {
             Progress::ScanStats current_stats = progress_manager_.get_stats();
             std::vector<Checkpoint::WorkerCheckpointState> worker_states; // TODO: Populate with actual worker states
             checkpoint_manager_.save_checkpoint(current_stats, worker_states);
-            std::cout << "Checkpoint saved at key: " << current_stats.current_position.load() << "\n";
+            std::cout << "Checkpoint saved at key: " << current_stats.current_position.to_hex() << "\n";
         }
     }
 
@@ -249,11 +260,6 @@ std::string to_base58(const std::vector<uint8_t>& data) {
     }
 
     // Convert binary to base58
-    std::vector<uint8_t> b58(data.size() * 2); // Max size
-    int b58_idx = b58.size() - 1;
-    std::vector<uint8_t> temp_data = data;
-
-    // Convert binary to base58
     std::vector<uint8_t> b58_digits;
     std::vector<uint8_t> temp_data = data;
 
@@ -262,10 +268,10 @@ std::string to_base58(const std::vector<uint8_t>& data) {
         std::vector<uint8_t> next_temp_data;
         for (uint8_t byte : temp_data) {
             int digit = byte + carry * 256;
-            next_temp_data.push_back(digit / 58);
+            next_temp_data.push_back(static_cast<uint8_t>(digit / 58));
             carry = digit % 58;
         }
-        b58_digits.push_back(carry);
+        b58_digits.push_back(static_cast<uint8_t>(carry));
 
         // Remove leading zeros from next_temp_data
         auto it = next_temp_data.begin();

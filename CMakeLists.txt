@@ -40,6 +40,7 @@ FetchContent_Declare(
 )
 
 # Configure secp256k1 options BEFORE MakeAvailable
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 set(SECP256K1_BUILD_BENCHMARK OFF CACHE BOOL "" FORCE)
 set(SECP256K1_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(SECP256K1_BUILD_EXHAUSTIVE_TESTS OFF CACHE BOOL "" FORCE)
@@ -68,7 +69,7 @@ target_include_directories(ScannerCore
 )
 
 target_link_libraries(ScannerCore
-    PRIVATE
+    PUBLIC
         secp256k1
 )
 
@@ -89,11 +90,11 @@ target_link_libraries(BitcoinPuzzleScanner
 #
 enable_testing()
 
-add_executable(run_tests
+add_executable(scanner_tests
     tests/test_main.cpp
 )
 
-target_link_libraries(run_tests
+target_link_libraries(scanner_tests
     PRIVATE
         gtest_main
         gmock_main
@@ -101,7 +102,7 @@ target_link_libraries(run_tests
 )
 
 include(GoogleTest)
-gtest_discover_tests(run_tests)
+gtest_discover_tests(scanner_tests)
 
 #
 # Install

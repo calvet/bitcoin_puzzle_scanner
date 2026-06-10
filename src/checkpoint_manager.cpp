@@ -4,7 +4,7 @@
 
 namespace Checkpoint {
 
-    CheckpointManager::CheckpointManager(const std::string& checkpoint_dir, uint64_t lower_bound, uint64_t upper_bound)
+    CheckpointManager::CheckpointManager(const std::string& checkpoint_dir, Types::UInt256 lower_bound, Types::UInt256 upper_bound)
         : checkpoint_dir_(checkpoint_dir),
           initial_lower_bound_(lower_bound),
           initial_upper_bound_(upper_bound) {
@@ -19,8 +19,8 @@ namespace Checkpoint {
         GlobalCheckpointState global_state;
         global_state.lower_bound = initial_lower_bound_;
         global_state.upper_bound = initial_upper_bound_;
-        global_state.keys_processed_total = stats.keys_processed_total.load();
-        global_state.current_position = stats.current_position.load();
+        global_state.keys_processed_total = stats.keys_processed_total;
+        global_state.current_position = stats.current_position;
 
         auto now = std::chrono::steady_clock::now();
         global_state.elapsed_seconds = std::chrono::duration_cast<std::chrono::seconds>(now - stats.start_time).count();

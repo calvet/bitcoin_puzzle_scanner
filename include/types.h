@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <vector>
 #include <array>
+#include "uint256.h"
 
 namespace Types {
     // Define a 256-bit private key type (for future expansion, currently using uint64_t for puzzle 71 range)

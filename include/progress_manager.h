@@ -3,17 +3,18 @@
 
 #include <cstdint>
 #include <string>
-#include <atomic>
 #include <chrono>
+#include <mutex>
+#include "types.h"
 #include <mutex>
 
 namespace Progress {
 
     struct ScanStats {
-        std::atomic<uint64_t> keys_processed_total;
-        std::atomic<uint64_t> current_position;
-        std::atomic<uint64_t> keys_found;
-        std::atomic<bool> match_found;
+        Types::UInt256 keys_processed_total;
+        Types::UInt256 current_position;
+        uint64_t keys_found;
+        bool match_found;
         std::chrono::steady_clock::time_point start_time;
         std::chrono::steady_clock::time_point last_checkpoint_time;
         std::string found_private_key_hex;
@@ -25,19 +26,22 @@ namespace Progress {
 
     class ProgressManager {
     public:
-        ProgressManager(uint64_t lower_bound, uint64_t upper_bound);
+        ProgressManager(Types::UInt256 lower_bound, Types::UInt256 upper_bound);
 
         void start_scan();
-        void update_progress(uint64_t keys_scanned_in_chunk, uint64_t current_chunk_end_key);
+        void update_progress(uint64_t keys_scanned_in_chunk, Types::UInt256 current_chunk_end_key);
         void report_match(const std::string& priv_key_hex, const std::string& pub_key_compressed_hex, const std::string& address);
         ScanStats get_stats() const;
         void display_dashboard() const;
-        bool is_match_found() const { return stats_.match_found.load(); }
+        bool is_match_found() const { 
+            std::lock_guard<std::mutex> lock(stats_mutex_);
+            return stats_.match_found; 
+        }
 
     private:
-        uint64_t lower_bound_;
-        uint64_t upper_bound_;
-        uint64_t total_keys_in_interval_;
+        Types::UInt256 lower_bound_;
+        Types::UInt256 upper_bound_;
+        Types::UInt256 total_keys_in_interval_;
         ScanStats stats_;
         mutable std::mutex stats_mutex_;
 
