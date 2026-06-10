@@ -1,0 +1,90 @@
+#include "checkpoint_manager.h"
+#include <fstream>
+#include <iostream>
+
+namespace Checkpoint {
+
+    CheckpointManager::CheckpointManager(const std::string& checkpoint_dir, uint64_t lower_bound, uint64_t upper_bound)
+        : checkpoint_dir_(checkpoint_dir),
+          initial_lower_bound_(lower_bound),
+          initial_upper_bound_(upper_bound) {
+        std::filesystem::create_directories(checkpoint_dir_);
+    }
+
+    std::filesystem::path CheckpointManager::get_checkpoint_file_path() const {
+        return checkpoint_dir_ / "latest.checkpoint";
+    }
+
+    void CheckpointManager::save_checkpoint(const Progress::ScanStats& stats, const std::vector<WorkerCheckpointState>& worker_states) {
+        GlobalCheckpointState global_state;
+        global_state.lower_bound = initial_lower_bound_;
+        global_state.upper_bound = initial_upper_bound_;
+        global_state.keys_processed_total = stats.keys_processed_total.load();
+        global_state.current_position = stats.current_position.load();
+
+        auto now = std::chrono::steady_clock::now();
+        global_state.elapsed_seconds = std::chrono::duration_cast<std::chrono::seconds>(now - stats.start_time).count();
+
+        global_state.worker_states = worker_states;
+
+        std::ofstream ofs(get_checkpoint_file_path(), std::ios::binary);
+        if (!ofs.is_open()) {
+            std::cerr << "Error: Could not open checkpoint file for writing.\n";
+            return;
+        }
+
+        ofs.write(reinterpret_cast<const char*>(&global_state.lower_bound), sizeof(global_state.lower_bound));
+        ofs.write(reinterpret_cast<const char*>(&global_state.upper_bound), sizeof(global_state.upper_bound));
+        ofs.write(reinterpret_cast<const char*>(&global_state.keys_processed_total), sizeof(global_state.keys_processed_total));
+        ofs.write(reinterpret_cast<const char*>(&global_state.current_position), sizeof(global_state.current_position));
+        ofs.write(reinterpret_cast<const char*>(&global_state.elapsed_seconds), sizeof(global_state.elapsed_seconds));
+
+        size_t num_workers = global_state.worker_states.size();
+        ofs.write(reinterpret_cast<const char*>(&num_workers), sizeof(num_workers));
+        for (const auto& worker_state : global_state.worker_states) {
+            ofs.write(reinterpret_cast<const char*>(&worker_state.current_private_key_value), sizeof(worker_state.current_private_key_value));
+        }
+
+        ofs.close();
+    }
+
+    bool CheckpointManager::load_latest_checkpoint(Progress::ScanStats& stats, std::vector<WorkerCheckpointState>& worker_states) {
+        std::ifstream ifs(get_checkpoint_file_path(), std::ios::binary);
+        if (!ifs.is_open()) {
+            return false;
+        }
+
+        GlobalCheckpointState global_state;
+        ifs.read(reinterpret_cast<char*>(&global_state.lower_bound), sizeof(global_state.lower_bound));
+        ifs.read(reinterpret_cast<char*>(&global_state.upper_bound), sizeof(global_state.upper_bound));
+        ifs.read(reinterpret_cast<char*>(&global_state.keys_processed_total), sizeof(global_state.keys_processed_total));
+        ifs.read(reinterpret_cast<char*>(&global_state.current_position), sizeof(global_state.current_position));
+        ifs.read(reinterpret_cast<char*>(&global_state.elapsed_seconds), sizeof(global_state.elapsed_seconds));
+
+        size_t num_workers;
+        ifs.read(reinterpret_cast<char*>(&num_workers), sizeof(num_workers));
+        worker_states.resize(num_workers);
+        for (size_t i = 0; i < num_workers; ++i) {
+            ifs.read(reinterpret_cast<char*>(&worker_states[i].current_private_key_value), sizeof(worker_states[i].current_private_key_value));
+        }
+
+        if (ifs.fail()) {
+            std::cerr << "Error: Checkpoint file corrupted or incomplete.\n";
+            ifs.close();
+            return false;
+        }
+
+        stats.keys_processed_total = global_state.keys_processed_total;
+        stats.current_position = global_state.current_position;
+        stats.start_time = std::chrono::steady_clock::now() - std::chrono::seconds(global_state.elapsed_seconds);
+        stats.last_checkpoint_time = stats.start_time; // Reset last checkpoint time to start time for now
+
+        ifs.close();
+        return true;
+    }
+
+    bool CheckpointManager::checkpoint_exists() const {
+        return std::filesystem::exists(get_checkpoint_file_path());
+    }
+
+}
