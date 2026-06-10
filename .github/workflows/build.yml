@@ -15,33 +15,35 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-    - name: Set up MSVC environment
-      uses: ilammy/msvc-dev-cmd@v1
+      - name: Set up MSVC environment
+        uses: ilammy/msvc-dev-cmd@v1
 
-    - name: Install CMake
-      run: choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
+      - name: Install CMake
+        run: choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
 
-    - name: Configure CMake
-      run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+      - name: Configure CMake
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
 
-    - name: Build
-      run: cmake --build build --config Release
+      - name: Build
+        run: cmake --build build --config Release
 
-    - name: Run Tests
-      run: |-
-        cd build\tests\Release
-        .\run_tests.exe
+      - name: Run Tests
+        shell: cmd
+        run: |
+          cd build\tests\Release
+          run_tests.exe
 
-    - name: Upload Artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: BitcoinPuzzleScanner-Windows
-        path: |
-          build\Release\BitcoinPuzzleScanner.exe
-          README.md
-          LICENSE
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: BitcoinPuzzleScanner-Windows
+          path: |
+            build\Release\BitcoinPuzzleScanner.exe
+            README.md
+            LICENSE
+          if-no-files-found: error
 
   release:
     if: startsWith(github.ref, 'refs/tags/')
@@ -49,51 +51,51 @@ jobs:
     needs: build
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-    - name: Download Build Artifacts
-      uses: actions/download-artifact@v3
-      with:
-        name: BitcoinPuzzleScanner-Windows
-        path: artifacts
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: BitcoinPuzzleScanner-Windows
+          path: artifacts
 
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
-        draft: false
-        prerelease: false
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
 
-    - name: Upload Release Asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: artifacts/BitcoinPuzzleScanner.exe
-        asset_name: BitcoinPuzzleScanner.exe
-        asset_content_type: application/vnd.microsoft.portable-executable
+      - name: Upload EXE to Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: artifacts/BitcoinPuzzleScanner.exe
+          asset_name: BitcoinPuzzleScanner.exe
+          asset_content_type: application/vnd.microsoft.portable-executable
 
-    - name: Upload README to Release
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: artifacts/README.md
-        asset_name: README.md
-        asset_content_type: text/markdown
+      - name: Upload README to Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: artifacts/README.md
+          asset_name: README.md
+          asset_content_type: text/markdown
 
-    - name: Upload LICENSE to Release
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: artifacts/LICENSE
-        asset_name: LICENSE
-        asset_content_type: text/plain
+      - name: Upload LICENSE to Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: artifacts/LICENSE
+          asset_name: LICENSE
+          asset_content_type: text/plain
