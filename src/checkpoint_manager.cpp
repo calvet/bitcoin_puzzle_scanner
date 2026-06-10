@@ -29,7 +29,7 @@ namespace Checkpoint {
 
         std::ofstream ofs(get_checkpoint_file_path(), std::ios::binary);
         if (!ofs.is_open()) {
-            std::cerr << "Error: Could not open checkpoint file for writing.\n";
+            std::cerr << Config::current_time() << "Error: Could not open checkpoint file for writing.\n";
             return;
         }
 
@@ -69,7 +69,7 @@ namespace Checkpoint {
         }
 
         if (ifs.fail()) {
-            std::cerr << "Error: Checkpoint file corrupted or incomplete.\n";
+            std::cerr << Config::current_time() << "Error: Checkpoint file corrupted or incomplete.\n";
             ifs.close();
             return false;
         }

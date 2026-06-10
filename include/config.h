@@ -3,8 +3,18 @@
 
 #include <string>
 #include <cstdint>
+#include <iomanip>
+#include <ctime>
+#include <sstream>
 
 namespace Config {
+    inline std::string current_time() {
+        std::time_t t = std::time(nullptr);
+        std::tm* tm = std::localtime(&t);
+        std::stringstream ss;
+        ss << "[" << std::put_time(tm, "%Y-%m-%d %H:%M:%S") << "] ";
+        return ss.str();
+    }
     // Threading configuration
     const int DEFAULT_WORKER_THREADS = 2; // Default to 2 worker threads
 

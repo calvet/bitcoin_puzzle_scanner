@@ -34,13 +34,13 @@ namespace Scanner {
             Progress::ScanStats loaded_stats;
             std::vector<Checkpoint::WorkerCheckpointState> loaded_worker_states;
             if (checkpoint_manager_.load_latest_checkpoint(loaded_stats, loaded_worker_states)) {
-                std::cout << "Resuming from checkpoint. Keys processed: " << loaded_stats.keys_processed_total.q0 << "\n";
+                std::cout << Config::current_time() << "Resuming from checkpoint. Keys processed: " << loaded_stats.keys_processed_total.q0 << "\n";
                 progress_manager_.start_scan(); // Re-initialize start time
                 progress_manager_.update_progress(loaded_stats.keys_processed_total.q0, loaded_stats.current_position);
                 next_chunk_start_key_ = loaded_stats.current_position;
                 // TODO: Distribute loaded_worker_states to individual workers if needed
             } else {
-                std::cerr << "Failed to load checkpoint. Starting new scan.\n";
+                std::cerr << Config::current_time() << "Failed to load checkpoint. Starting new scan.\n";
                 progress_manager_.start_scan();
             }
         } else {
@@ -54,7 +54,7 @@ namespace Scanner {
 
     void ScannerEngine::start() {
         running_ = true;
-        std::cout << "Starting scanner with " << num_threads_ << " threads.\n";
+        std::cout << Config::current_time() << "Starting scanner with " << num_threads_ << " threads.\n";
 
         // Start worker threads
         for (int i = 0; i < num_threads_; ++i) {
@@ -77,7 +77,7 @@ namespace Scanner {
             running_ = false;
             // Notify checkpoint thread to stop if it's waiting
             checkpoint_cv_.notify_all();
-            std::cout << "Stopping scanner...\n";
+            std::cout << Config::current_time() << "Stopping scanner...\n";
         }
     }
 
@@ -173,7 +173,7 @@ namespace Scanner {
             // Initialize current_point for this chunk
             priv_key = uint256_to_private_key(chunk_start_key);
             if (!current_point.init_from_private_key(priv_key)) {
-                std::cerr << "Worker " << worker_id << ": Failed to initialize point from private key.\n";
+                std::cerr << Config::current_time() << "Worker " << worker_id << ": Failed to initialize point from private key.\n";
                 running_ = false; // Critical error, stop all
                 break;
             }
@@ -185,7 +185,7 @@ namespace Scanner {
 
                 // Derive compressed public key
                 if (!current_point.serialize_compressed(pub_key_compressed)) {
-                    std::cerr << "Worker " << worker_id << ": Failed to serialize public key.\n";
+                    std::cerr << Config::current_time() << "Worker " << worker_id << ": Failed to serialize public key.\n";
                     running_ = false;
                     break;
                 }
@@ -195,20 +195,21 @@ namespace Scanner {
 
                 // Compare against target
                 if (std::equal(current_hash160.begin(), current_hash160.end(), target_hash160_.begin())) {
-                    std::cout << "\nMatch found by worker " << worker_id << "!\n";
+                    std::cout << Config::current_time() << "\nMatch found by worker " << worker_id << "!\n";
                     progress_manager_.report_match(
                         private_key_to_hex(priv_key),
                         public_key_to_hex(pub_key_compressed),
                         hash160_to_address(current_hash160)
                     );
                     running_ = false; // Signal other threads to stop
+                    checkpoint_cv_.notify_all(); // Wake up checkpoint thread
                     break;
                 }
 
                 // Incremental point walking: P = P + G
                 if (current_key_value < upper_bound_) { // Avoid adding G if it's the last key
                     if (!current_point.add_generator()) {
-                        std::cerr << "Worker " << worker_id << ": Failed to add generator point.\n";
+                        std::cerr << Config::current_time() << "Worker " << worker_id << ": Failed to add generator point.\n";
                         running_ = false;
                         break;
                     }
@@ -237,7 +238,7 @@ namespace Scanner {
             Progress::ScanStats current_stats = progress_manager_.get_stats();
             std::vector<Checkpoint::WorkerCheckpointState> worker_states; // TODO: Populate with actual worker states
             checkpoint_manager_.save_checkpoint(current_stats, worker_states);
-            std::cout << "Checkpoint saved at key: " << current_stats.current_position.to_hex() << "\n";
+            std::cout << Config::current_time() << "Checkpoint saved at key: " << current_stats.current_position.to_hex() << "\n";
         }
     }
 
