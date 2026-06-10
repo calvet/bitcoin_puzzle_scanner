@@ -1,6 +1,7 @@
 #include "checkpoint_manager.h"
 #include <fstream>
 #include <iostream>
+#include "config.h"
 
 namespace Checkpoint {
 
