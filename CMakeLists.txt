@@ -77,6 +77,7 @@ add_library(ScannerCore STATIC
 target_include_directories(ScannerCore
     PUBLIC
         include
+        src
 )
 
 target_link_libraries(ScannerCore
