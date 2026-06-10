@@ -62,24 +62,13 @@ TEST(ECCTest, CompressedPublicKeyAndIncrementalWalking) {
     ECC::Context ecc_ctx;
     ECC::Point point(ecc_ctx);
 
-    // Test with private key 1 (0x01)
-    Types::PrivateKey priv_key_one;
-    priv_key_one.fill(0);
-    priv_key_one[31] = 1;
+    // Test with private key 2 (0x02)
+    Types::PrivateKey priv_key_two;
+    priv_key_two.fill(0);
+    priv_key_two[31] = 2;
 
-    ASSERT_TRUE(point.init_from_private_key(priv_key_one));
+    ASSERT_TRUE(point.init_from_private_key(priv_key_two));
 
-    Types::PublicKeyCompressed pub_key_one;
-    ASSERT_TRUE(point.serialize_compressed(pub_key_one));
-
-    // Expected compressed public key for private key 1 (from known sources)
-    // 0279BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798
-    Types::PublicKeyCompressed expected_pub_key_one = hex_to_pubkey("0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798");
-    ASSERT_EQ(expected_pub_key_one, pub_key_one);
-
-    // Test incremental point walking (P = P + G)
-    // Start with private key 1, add G to get public key for private key 2
-    ASSERT_TRUE(point.add_generator());
     Types::PublicKeyCompressed pub_key_two;
     ASSERT_TRUE(point.serialize_compressed(pub_key_two));
 
@@ -87,6 +76,17 @@ TEST(ECCTest, CompressedPublicKeyAndIncrementalWalking) {
     // 02c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5
     Types::PublicKeyCompressed expected_pub_key_two = hex_to_pubkey("02c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5");
     ASSERT_EQ(expected_pub_key_two, pub_key_two);
+
+    // Test incremental point walking (P = P + G)
+    // Start with private key 2, add G to get public key for private key 3
+    ASSERT_TRUE(point.add_generator());
+    Types::PublicKeyCompressed pub_key_three;
+    ASSERT_TRUE(point.serialize_compressed(pub_key_three));
+
+    // Expected compressed public key for private key 3
+    // 02f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9
+    Types::PublicKeyCompressed expected_pub_key_three = hex_to_pubkey("02f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9");
+    ASSERT_EQ(expected_pub_key_three, pub_key_three);
 }
 
 // Test Checkpoint Serialization and Restoration

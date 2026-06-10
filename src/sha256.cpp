@@ -1,6 +1,8 @@
 #include "sha256.h"
 #include <string.h>
 #include "ripemd160.h"
+#include "sha256_keyhunt.h"
+#include "ripemd160_keyhunt.h"
 
 namespace Hashing {
 
@@ -184,8 +186,8 @@ namespace Hashing {
 
     void hash160(const void *src, size_t n_bytes, uint8_t *dst_hash160) {
         uint8_t sha256_result[SHA256_BYTES_SIZE];
-        sha256_bytes(src, n_bytes, sha256_result);
-        ripemd160(sha256_result, SHA256_BYTES_SIZE, dst_hash160);
+        ::sha256((uint8_t*)src, n_bytes, sha256_result);
+        ::ripemd160(sha256_result, SHA256_BYTES_SIZE, dst_hash160);
     }
 
 }
