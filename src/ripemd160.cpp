@@ -95,7 +95,7 @@ static void compress(uint32_t *digest, uint32_t *X)
     digest[0] = aa; digest[1] = bb; digest[2] = cc; digest[3] = dd; digest[4] = ee;
 
     /* Parallel round 1 */
-#define F1(x, y, z) (x ^ y ^ z)
+#define F1(x, y, z) (x ^ (y | ~z))
 #define P1(a, b, c, d, e, x, s) { a += F1(b, c, d) + x + 0x50a28be6UL; a = ROL(a, s) + e; c = ROL(c, 10); }
     P1(a, b, c, d, e, X[ 5],  8); P1(e, a, b, c, d, X[14],  9); P1(d, e, a, b, c, X[ 7],  9); P1(c, d, e, a, b, X[ 0], 11);
     P1(b, c, d, e, a, X[ 9], 13); P1(a, b, c, d, e, X[ 2], 15); P1(e, a, b, c, d, X[11], 15); P1(d, e, a, b, c, X[ 4],  5);
