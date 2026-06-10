@@ -84,3 +84,4 @@ Possible future improvements include:
 *   [libsecp256k1 GitHub Repository](https://github.com/bitcoin-core/secp256k1)
 *   [SHA-256 Library in C (lucidar.me)](https://lucidar.me/en/dev-c-cpp/sha-256-in-c-cpp/)
 *   [cpp-ripemd160 GitHub Repository](https://github.com/miguelmota/cpp-ripemd160)
+
