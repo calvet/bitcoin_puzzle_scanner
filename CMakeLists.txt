@@ -8,9 +8,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Compiler warnings
 if(MSVC)
-    add_compile_options(/W4 /WX)
+    add_compile_options(/W4 /WX /arch:AVX2)
 else()
-    add_compile_options(-Wall -Wextra -Werror)
+    add_compile_options(-Wall -Wextra -Werror -msse4.1 -mavx -mavx2)
 endif()
 
 # Include directories
@@ -57,10 +57,21 @@ FetchContent_MakeAvailable(secp256k1)
 add_library(ScannerCore STATIC
     src/sha256.cpp
     src/ripemd160.cpp
+    src/sha256_keyhunt.cpp
+    src/sha256_sse.cpp
+    src/ripemd160_keyhunt.cpp
+    src/ripemd160_sse.cpp
     src/ecc.cpp
     src/progress_manager.cpp
     src/checkpoint_manager.cpp
     src/scanner_engine.cpp
+    src/util.c
+    src/secp256k1/Int.cpp
+    src/secp256k1/IntGroup.cpp
+    src/secp256k1/IntMod.cpp
+    src/secp256k1/Point.cpp
+    src/secp256k1/Random.cpp
+    src/secp256k1/SECP256K1.cpp
 )
 
 target_include_directories(ScannerCore
