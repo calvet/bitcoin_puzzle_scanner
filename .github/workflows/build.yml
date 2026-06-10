@@ -79,7 +79,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: artifacts/BitcoinPuzzleScanner.exe
+          asset_path: artifacts/build/Release/BitcoinPuzzleScanner.exe
           asset_name: BitcoinPuzzleScanner.exe
           asset_content_type: application/vnd.microsoft.portable-executable
 
