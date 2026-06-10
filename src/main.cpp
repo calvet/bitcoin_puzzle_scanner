@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include <stdexcept>
+#include <fstream>
 
 #include "config.h"
 #include "puzzles.h"
@@ -99,15 +100,38 @@ int main() {
         );
         engine.start();
 
-        // After scan finishes, display final stats if no match was found
-        // Or display match details if found (handled by progress manager)
+        auto stats = engine.get_scan_stats();
+        if (stats.match_found) {
+            std::cout << "\n========================================================\n";
+            std::cout << "MATCH FOUND!\n";
+            std::cout << "Private Key (Hex):     " << stats.found_private_key_hex << "\n";
+            std::cout << "Public Key (Comp.):    " << stats.found_public_key_compressed_hex << "\n";
+            std::cout << "Derived Address:       " << stats.found_address << "\n";
+            std::cout << "========================================================\n\n";
+
+            std::string filename = "FOUND_PUZZLE_" + std::to_string(puzzle_num) + ".txt";
+            std::ofstream out_file(filename);
+            if (out_file.is_open()) {
+                out_file << "MATCH FOUND FOR PUZZLE #" << puzzle_num << "\n";
+                out_file << "Private Key (Hex):     " << stats.found_private_key_hex << "\n";
+                out_file << "Public Key (Comp.):    " << stats.found_public_key_compressed_hex << "\n";
+                out_file << "Derived Address:       " << stats.found_address << "\n";
+                out_file.close();
+                std::cout << "Details saved to " << filename << "\n";
+            } else {
+                std::cerr << "Failed to save match details to file.\n";
+            }
+        }
 
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << "\n";
         return 1;
     }
 
-    std::cout << "Scanner finished.\n";
-
+    std::cout << "\nScanner finished.\n";
+    std::cout << "Press Enter to exit...";
+    std::string dummy;
+    std::getline(std::cin, dummy);
+    
     return 0;
 }

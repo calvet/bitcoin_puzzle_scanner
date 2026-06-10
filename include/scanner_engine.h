@@ -64,6 +64,7 @@ namespace Scanner {
         std::string hash160_to_hex(const Types::Hash160& hash);
     public:
         std::string hash160_to_address(const Types::Hash160& hash);
+        Progress::ScanStats get_scan_stats() const { return progress_manager_.get_stats(); }
     };
 
 }
