@@ -199,6 +199,12 @@ int main() {
                 out_file << Config::current_time() << "Position in Range:     " << std::fixed << std::setprecision(4) << pos_percentage << "%\n";
                 out_file.close();
                 std::cout << Config::current_time() << "Details saved to " << filename << "\n";
+
+                std::string checkpoint_file = "checkpoints/puzzle_" + std::to_string(puzzle_num) + ".checkpoint";
+                std::string used_file = "checkpoints/puzzle_" + std::to_string(puzzle_num) + ".checkpoint.used";
+                if (std::rename(checkpoint_file.c_str(), used_file.c_str()) == 0) {
+                    std::cout << Config::current_time() << "Checkpoint renamed to " << used_file << "\n";
+                }
             } else {
                 std::cerr << Config::current_time() << "Failed to save match details to file.\n";
             }
