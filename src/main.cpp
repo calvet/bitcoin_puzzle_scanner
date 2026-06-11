@@ -169,22 +169,34 @@ int main() {
             int seconds = static_cast<int>(elapsed_seconds % 60);
             std::string time_str = std::to_string(hours) + "h " + std::to_string(minutes) + "m " + std::to_string(seconds) + "s";
 
+            Types::UInt256 found_key_val = Types::UInt256::from_hex(stats.found_private_key_hex);
+            double range_total = upper_bound.get_double() - lower_bound.get_double();
+            double key_pos = found_key_val.get_double() - lower_bound.get_double();
+            double pos_percentage = 0.0;
+            if (range_total > 0) {
+                pos_percentage = (key_pos / range_total) * 100.0;
+            }
+            if (pos_percentage < 0.0) pos_percentage = 0.0;
+            if (pos_percentage > 100.0) pos_percentage = 100.0;
+
             std::cout << Config::current_time() << "========================================================\n";
             std::cout << Config::current_time() << "MATCH FOUND!\n";
-            std::cout << Config::current_time() << "Time Taken:            " << time_str << "\n";
             std::cout << Config::current_time() << "Private Key (Hex):     " << stats.found_private_key_hex << "\n";
             std::cout << Config::current_time() << "Public Key (Comp.):    " << stats.found_public_key_compressed_hex << "\n";
             std::cout << Config::current_time() << "Derived Address:       " << stats.found_address << "\n";
+            std::cout << Config::current_time() << "Time Taken:            " << time_str << "\n";
+            std::cout << Config::current_time() << "Position in Range:     " << std::fixed << std::setprecision(4) << pos_percentage << "%\n";
             std::cout << Config::current_time() << "========================================================\n";
 
             std::string filename = "FOUND_PUZZLE_" + std::to_string(puzzle_num) + ".txt";
             std::ofstream out_file(filename);
             if (out_file.is_open()) {
                 out_file << Config::current_time() << "MATCH FOUND FOR PUZZLE #" << puzzle_num << "\n";
-                out_file << Config::current_time() << "Time Taken:            " << time_str << "\n";
                 out_file << Config::current_time() << "Private Key (Hex):     " << stats.found_private_key_hex << "\n";
                 out_file << Config::current_time() << "Public Key (Comp.):    " << stats.found_public_key_compressed_hex << "\n";
                 out_file << Config::current_time() << "Derived Address:       " << stats.found_address << "\n";
+                out_file << Config::current_time() << "Time Taken:            " << time_str << "\n";
+                out_file << Config::current_time() << "Position in Range:     " << std::fixed << std::setprecision(4) << pos_percentage << "%\n";
                 out_file.close();
                 std::cout << Config::current_time() << "Details saved to " << filename << "\n";
             } else {
