@@ -83,6 +83,7 @@ Upon starting, the scanner will prompt you interactively to configure your sessi
 4. **Scan Mode:** Choose between **Sequential** (linear scan) or **Random** mode.
 5. **Random Pause:** Add an optional pause between blocks to prevent rate-limiting or throttle usage.
 6. **Verbose Mode:** Optionally enable verbose output to log which block each thread is currently scanning (disabled by default).
+7. **Telegram Notifications:** Optionally enable Telegram notifications by entering your Bot Token and Chat ID. When a puzzle is found, the scanner will send a secure message notifying you. Get your Chat ID by messaging `@userinfobot` on Telegram.
 
 When a match is found, the details (Private Key, Public Key, Address) are printed to the console and saved automatically into a `FOUND_PUZZLE_<number>.txt` file.
 

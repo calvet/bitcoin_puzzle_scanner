@@ -134,6 +134,27 @@ int main() {
         std::cout << Config::current_time() << "[WARNING] Random mode enabled. Checkpoints will NOT save your resume position, only total keys processed and elapsed time!\n";
     }
 
+    std::string telegram_token = "";
+    std::string telegram_chat_id = "";
+    std::cout << Config::current_time() << "Enable Telegram notifications? [y/N] [Default N]: ";
+    std::getline(std::cin, input);
+    if (!input.empty() && (input == "y" || input == "Y")) {
+        std::cout << Config::current_time() << "Enter Telegram Bot Token: ";
+        std::getline(std::cin, telegram_token);
+        std::cout << Config::current_time() << "Enter Telegram Chat ID (e.g., from @userinfobot): ";
+        std::getline(std::cin, telegram_chat_id);
+
+        if (!telegram_token.empty() && !telegram_chat_id.empty()) {
+            std::cout << Config::current_time() << "Sending test message to Telegram...\n";
+            std::string cmd = "curl -s -X POST https://api.telegram.org/bot" + telegram_token + "/sendMessage -d chat_id=" + telegram_chat_id + " -d text=\"Bitcoin Puzzle Scanner: Notifications enabled successfully!\" > /dev/null 2>&1";
+            std::system(cmd.c_str());
+        } else {
+            std::cout << Config::current_time() << "Telegram token or chat ID is empty. Notifications disabled.\n";
+            telegram_token = "";
+            telegram_chat_id = "";
+        }
+    }
+
     Types::UInt256 lower_bound = get_lower_bound(puzzle_num);
     Types::UInt256 upper_bound = get_upper_bound(puzzle_num);
 
@@ -147,6 +168,7 @@ int main() {
         std::cout << Config::current_time() << "Max Random Pause: " << max_pause << "s\n";
     }
     std::cout << Config::current_time() << "Verbose Mode:     " << (Config::VERBOSE_MODE ? "Enabled" : "Disabled") << "\n";
+    std::cout << Config::current_time() << "Telegram Notifs:  " << (!telegram_token.empty() ? "Enabled" : "Disabled") << "\n";
     std::cout << Config::current_time() << "Search Range: 0x" << lower_bound.to_hex() << " to 0x" << upper_bound.to_hex() << "\n";
 
     Types::Hash160 target_hash160_bytes;
@@ -215,6 +237,13 @@ int main() {
                 }
             } else {
                 std::cerr << Config::current_time() << "Failed to save match details to file.\n";
+            }
+
+            if (!telegram_token.empty() && !telegram_chat_id.empty()) {
+                std::string msg = "BINGO! The scanner found the result for Puzzle %23" + std::to_string(puzzle_num) + "! Check the file " + filename + " on the server immediately.";
+                std::string cmd = "curl -s -X POST https://api.telegram.org/bot" + telegram_token + "/sendMessage -d chat_id=" + telegram_chat_id + " -d text=\"" + msg + "\" > /dev/null 2>&1";
+                std::system(cmd.c_str());
+                std::cout << Config::current_time() << "Telegram notification sent!\n";
             }
         }
 
