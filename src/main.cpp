@@ -146,7 +146,12 @@ int main() {
 
         if (!telegram_token.empty() && !telegram_chat_id.empty()) {
             std::cout << Config::current_time() << "Sending test message to Telegram...\n";
-            std::string cmd = "curl -s -X POST https://api.telegram.org/bot" + telegram_token + "/sendMessage -d chat_id=" + telegram_chat_id + " -d text=\"Bitcoin Puzzle Scanner: Notifications enabled successfully!\" > /dev/null 2>&1";
+#ifdef _WIN32
+            std::string null_dev = " > NUL 2>&1";
+#else
+            std::string null_dev = " > /dev/null 2>&1";
+#endif
+            std::string cmd = "curl -s -X POST https://api.telegram.org/bot" + telegram_token + "/sendMessage -d chat_id=" + telegram_chat_id + " -d text=\"Bitcoin Puzzle Scanner: Notifications enabled successfully!\"" + null_dev;
             std::system(cmd.c_str());
         } else {
             std::cout << Config::current_time() << "Telegram token or chat ID is empty. Notifications disabled.\n";
@@ -241,7 +246,12 @@ int main() {
 
             if (!telegram_token.empty() && !telegram_chat_id.empty()) {
                 std::string msg = "BINGO! The scanner found the result for Puzzle %23" + std::to_string(puzzle_num) + "! Check the file " + filename + " on the server immediately.";
-                std::string cmd = "curl -s -X POST https://api.telegram.org/bot" + telegram_token + "/sendMessage -d chat_id=" + telegram_chat_id + " -d text=\"" + msg + "\" > /dev/null 2>&1";
+#ifdef _WIN32
+                std::string null_dev = " > NUL 2>&1";
+#else
+                std::string null_dev = " > /dev/null 2>&1";
+#endif
+                std::string cmd = "curl -s -X POST https://api.telegram.org/bot" + telegram_token + "/sendMessage -d chat_id=" + telegram_chat_id + " -d text=\"" + msg + "\"" + null_dev;
                 std::system(cmd.c_str());
                 std::cout << Config::current_time() << "Telegram notification sent!\n";
             }
