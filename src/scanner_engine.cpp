@@ -250,9 +250,9 @@ namespace Scanner {
             if (max_pause_seconds_ > 0 && running_.load()) {
                 std::random_device rd;
                 std::mt19937 gen(rd());
-                std::uniform_int_distribution<> chance_dist(1, 10);
+                std::uniform_int_distribution<> chance_dist(1, 20);
                 
-                if (chance_dist(gen) == 1) { // 10% chance to pause
+                if (chance_dist(gen) == 1) { // 5% chance to pause
                     std::uniform_int_distribution<> dist(1, max_pause_seconds_);
                     int pause_time = dist(gen);
                     if (pause_time > 0) {
