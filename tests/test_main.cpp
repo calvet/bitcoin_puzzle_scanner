@@ -97,7 +97,7 @@ TEST(CheckpointTest, SaveAndLoadCheckpoint) {
 
     Types::UInt256 lower(1000);
     Types::UInt256 upper(2000);
-    Checkpoint::CheckpointManager mgr(test_checkpoint_dir, lower, upper);
+    Checkpoint::CheckpointManager mgr(test_checkpoint_dir, lower, upper, 71);
 
     Progress::ScanStats stats;
     stats.keys_processed_total = 500;

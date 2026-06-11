@@ -5,19 +5,21 @@
 
 namespace Checkpoint {
 
-    CheckpointManager::CheckpointManager(const std::string& checkpoint_dir, Types::UInt256 lower_bound, Types::UInt256 upper_bound)
+    CheckpointManager::CheckpointManager(const std::string& checkpoint_dir, Types::UInt256 lower_bound, Types::UInt256 upper_bound, int puzzle_number)
         : checkpoint_dir_(checkpoint_dir),
           initial_lower_bound_(lower_bound),
-          initial_upper_bound_(upper_bound) {
+          initial_upper_bound_(upper_bound),
+          puzzle_number_(puzzle_number) {
         std::filesystem::create_directories(checkpoint_dir_);
     }
 
     std::filesystem::path CheckpointManager::get_checkpoint_file_path() const {
-        return checkpoint_dir_ / "latest.checkpoint";
+        return checkpoint_dir_ / ("puzzle_" + std::to_string(puzzle_number_) + ".checkpoint");
     }
 
     void CheckpointManager::save_checkpoint(const Progress::ScanStats& stats, const std::vector<WorkerCheckpointState>& worker_states) {
         GlobalCheckpointState global_state;
+        global_state.puzzle_number = puzzle_number_;
         global_state.lower_bound = initial_lower_bound_;
         global_state.upper_bound = initial_upper_bound_;
         global_state.keys_processed_total = stats.keys_processed_total;
@@ -34,6 +36,7 @@ namespace Checkpoint {
             return;
         }
 
+        ofs.write(reinterpret_cast<const char*>(&global_state.puzzle_number), sizeof(global_state.puzzle_number));
         ofs.write(reinterpret_cast<const char*>(&global_state.lower_bound), sizeof(global_state.lower_bound));
         ofs.write(reinterpret_cast<const char*>(&global_state.upper_bound), sizeof(global_state.upper_bound));
         ofs.write(reinterpret_cast<const char*>(&global_state.keys_processed_total), sizeof(global_state.keys_processed_total));
@@ -56,6 +59,7 @@ namespace Checkpoint {
         }
 
         GlobalCheckpointState global_state;
+        ifs.read(reinterpret_cast<char*>(&global_state.puzzle_number), sizeof(global_state.puzzle_number));
         ifs.read(reinterpret_cast<char*>(&global_state.lower_bound), sizeof(global_state.lower_bound));
         ifs.read(reinterpret_cast<char*>(&global_state.upper_bound), sizeof(global_state.upper_bound));
         ifs.read(reinterpret_cast<char*>(&global_state.keys_processed_total), sizeof(global_state.keys_processed_total));
@@ -86,6 +90,33 @@ namespace Checkpoint {
 
     bool CheckpointManager::checkpoint_exists() const {
         return std::filesystem::exists(get_checkpoint_file_path());
+    }
+
+    std::vector<GlobalCheckpointState> CheckpointManager::get_all_checkpoints(const std::string& checkpoint_dir) {
+        std::vector<GlobalCheckpointState> checkpoints;
+        if (!std::filesystem::exists(checkpoint_dir)) return checkpoints;
+
+        for (const auto& entry : std::filesystem::directory_iterator(checkpoint_dir)) {
+            if (entry.path().extension() == ".checkpoint") {
+                std::ifstream ifs(entry.path(), std::ios::binary);
+                if (ifs.is_open()) {
+                    GlobalCheckpointState state;
+                    ifs.read(reinterpret_cast<char*>(&state.puzzle_number), sizeof(state.puzzle_number));
+                    ifs.read(reinterpret_cast<char*>(&state.lower_bound), sizeof(state.lower_bound));
+                    ifs.read(reinterpret_cast<char*>(&state.upper_bound), sizeof(state.upper_bound));
+                    ifs.read(reinterpret_cast<char*>(&state.keys_processed_total), sizeof(state.keys_processed_total));
+                    ifs.read(reinterpret_cast<char*>(&state.current_position), sizeof(state.current_position));
+                    ifs.read(reinterpret_cast<char*>(&state.elapsed_seconds), sizeof(state.elapsed_seconds));
+                    if (!ifs.fail()) {
+                        checkpoints.push_back(state);
+                    }
+                }
+            }
+        }
+        std::sort(checkpoints.begin(), checkpoints.end(), [](const GlobalCheckpointState& a, const GlobalCheckpointState& b) {
+            return a.puzzle_number < b.puzzle_number;
+        });
+        return checkpoints;
     }
 
 }

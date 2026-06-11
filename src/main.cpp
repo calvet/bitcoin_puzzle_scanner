@@ -8,6 +8,7 @@
 #include "puzzles.h"
 #include "types.h"
 #include "scanner_engine.h"
+#include "checkpoint_manager.h"
 #include <iomanip>
 
 void set_bit(Types::UInt256& num, int bit) {
@@ -35,6 +36,28 @@ Types::UInt256 get_upper_bound(int N) {
 
 int main() {
     std::cout << Config::current_time() << "Welcome to Bitcoin Puzzle Scanner!\n";
+
+    // Check for existing checkpoints
+    auto existing_checkpoints = Checkpoint::CheckpointManager::get_all_checkpoints(Config::CHECKPOINT_DIR);
+    if (!existing_checkpoints.empty()) {
+        std::cout << Config::current_time() << "--- Existing Checkpoints ---\n";
+        for (const auto& cp : existing_checkpoints) {
+            double range_total = cp.upper_bound.get_double() - cp.lower_bound.get_double();
+            double current_prog = cp.current_position.get_double() - cp.lower_bound.get_double();
+            double percentage = 0.0;
+            if (range_total > 0) {
+                percentage = (current_prog / range_total) * 100.0;
+            }
+            // Add bounds check in case current_prog is negative or > range_total
+            if (percentage < 0.0) percentage = 0.0;
+            if (percentage > 100.0) percentage = 100.0;
+
+            std::cout << Config::current_time() << "  Puzzle #" << cp.puzzle_number 
+                      << " | Progress: " << std::fixed << std::setprecision(4) << percentage << "%\n";
+        }
+        std::cout << Config::current_time() << "----------------------------\n";
+    }
+
     std::cout << Config::current_time() << "Choose the Puzzle number (1 to 160)\n";
     std::cout << Config::current_time() << "[Note: Puzzle #71 is currently the easiest available with balance!]\n";
     std::cout << Config::current_time() << "Puzzle [Default 71]: ";

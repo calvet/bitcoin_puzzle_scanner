@@ -17,6 +17,7 @@ namespace Checkpoint {
     };
 
     struct GlobalCheckpointState {
+        int puzzle_number;
         Types::UInt256 lower_bound;
         Types::UInt256 upper_bound;
         Types::UInt256 keys_processed_total;
@@ -28,7 +29,9 @@ namespace Checkpoint {
 
     class CheckpointManager {
     public:
-        CheckpointManager(const std::string& checkpoint_dir, Types::UInt256 lower_bound, Types::UInt256 upper_bound);
+        CheckpointManager(const std::string& checkpoint_dir, Types::UInt256 lower_bound, Types::UInt256 upper_bound, int puzzle_number);
+
+        static std::vector<GlobalCheckpointState> get_all_checkpoints(const std::string& checkpoint_dir);
 
         void save_checkpoint(const Progress::ScanStats& stats, const std::vector<WorkerCheckpointState>& worker_states);
         bool load_latest_checkpoint(Progress::ScanStats& stats, std::vector<WorkerCheckpointState>& worker_states);
@@ -38,6 +41,7 @@ namespace Checkpoint {
         std::filesystem::path checkpoint_dir_;
         Types::UInt256 initial_lower_bound_;
         Types::UInt256 initial_upper_bound_;
+        int puzzle_number_;
 
         std::filesystem::path get_checkpoint_file_path() const;
     };

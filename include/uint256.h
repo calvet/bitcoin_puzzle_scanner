@@ -155,6 +155,16 @@ namespace Types {
             }
             return 0xFFFFFFFFFFFFFFFFULL;
         }
+
+        double get_double() const {
+            double d = 0;
+            const double f = 18446744073709551616.0; // 2^64
+            d += static_cast<double>(q3) * f * f * f;
+            d += static_cast<double>(q2) * f * f;
+            d += static_cast<double>(q1) * f;
+            d += static_cast<double>(q0);
+            return d;
+        }
     };
 
 }

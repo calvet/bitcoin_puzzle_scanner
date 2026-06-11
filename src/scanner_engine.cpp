@@ -27,7 +27,7 @@ namespace Scanner {
           running_(false),
           next_chunk_start_key_(lower_bound),
           progress_manager_(lower_bound, upper_bound, puzzle_number, num_threads),
-          checkpoint_manager_(Config::CHECKPOINT_DIR, lower_bound, upper_bound) {
+          checkpoint_manager_(Config::CHECKPOINT_DIR, lower_bound, upper_bound, puzzle_number) {
 
         // Try to load checkpoint
         if (checkpoint_manager_.checkpoint_exists()) {
