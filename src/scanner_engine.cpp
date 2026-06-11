@@ -265,8 +265,17 @@ namespace Scanner {
             int seconds = static_cast<int>(elapsed_seconds % 60);
             std::string time_str = std::to_string(hours) + "h " + std::to_string(minutes) + "m " + std::to_string(seconds) + "s";
 
+            double range_total = upper_bound_.get_double() - lower_bound_.get_double();
+            double keys_processed = current_stats.keys_processed_total.get_double();
+            double percentage = 0.0;
+            if (range_total > 0) {
+                percentage = (keys_processed / range_total) * 100.0;
+            }
+            if (percentage > 100.0) percentage = 100.0;
+
             std::cout << Config::current_time() << "Checkpoint saved at key: " << current_stats.current_position.to_hex() 
-                      << " | Elapsed: " << time_str << "\n";
+                      << " | Elapsed: " << time_str 
+                      << " | Progress: " << std::fixed << std::setprecision(4) << percentage << "%\n";
         }
     }
 
