@@ -191,6 +191,13 @@ namespace Scanner {
                 break; // All keys processed
             }
 
+            if (Config::VERBOSE_MODE) {
+                std::cout << Config::current_time()
+                          << "Worker " << worker_id
+                          << ": processing block 0x" << chunk_start_key.to_hex()
+                          << " – 0x" << chunk_end_key.to_hex() << "\n";
+            }
+
             // Initialize current_point for this chunk
             priv_key = uint256_to_private_key(chunk_start_key);
             if (!current_point.init_from_private_key(priv_key)) {
@@ -216,7 +223,7 @@ namespace Scanner {
 
                 // Compare against target
                 if (std::equal(current_hash160.begin(), current_hash160.end(), target_hash160_.begin())) {
-                    std::cout << Config::current_time() << "Match found by worker " << worker_id << "!\n";
+                    std::cout << Config::current_time() << "Worker " << worker_id << ": Match found!\n";
                     progress_manager_.report_match(
                         private_key_to_hex(uint256_to_private_key(current_key_value)),
                         public_key_to_hex(pub_key_compressed),
@@ -256,6 +263,7 @@ namespace Scanner {
                     std::uniform_int_distribution<> dist(1, max_pause_seconds_);
                     int pause_time = dist(gen);
                     if (pause_time > 0) {
+                        std::cout << Config::current_time() << "Worker " << worker_id << ": Pausing for " << pause_time << " seconds.\n";
                         // Sleep in 100ms increments to stay responsive to stop requests
                         for (int s = 0; s < pause_time * 10 && running_.load(); ++s) {
                             std::this_thread::sleep_for(std::chrono::milliseconds(100));

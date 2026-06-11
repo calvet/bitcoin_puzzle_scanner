@@ -82,8 +82,23 @@ Upon starting, the scanner will prompt you interactively to configure your sessi
 3. **Checkpoint Interval:** Set the interval (in seconds) to save your progress.
 4. **Scan Mode:** Choose between **Sequential** (linear scan) or **Random** mode.
 5. **Random Pause:** Add an optional pause between blocks to prevent rate-limiting or throttle usage.
+6. **Verbose Mode:** Optionally enable verbose output to log which block each thread is currently scanning (disabled by default).
 
 When a match is found, the details (Private Key, Public Key, Address) are printed to the console and saved automatically into a `FOUND_PUZZLE_<number>.txt` file.
+
+## Verbose Mode
+
+Verbose mode is an **opt-in** diagnostic feature (disabled by default). When enabled, each worker thread prints a timestamped message every time it starts scanning a new block of keys:
+
+```
+[2026-06-11 02:47:00] Worker 0: processing block 0x<start_hex> – 0x<end_hex>
+[2026-06-11 02:47:00] Worker 1: processing block 0x<start_hex> – 0x<end_hex>
+...
+```
+
+Each block covers **100 000 keys**, so the output is informative without being overwhelming. This is useful for verifying that all threads are active, checking for stragglers, and confirming the scanner is covering the expected region of the key-space.
+
+> **Note:** In Random mode the block start addresses will be non-contiguous, which is expected.
 
 ## Checkpoint Behavior
 

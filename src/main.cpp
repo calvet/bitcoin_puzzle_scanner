@@ -124,6 +124,12 @@ int main() {
     if (max_pause < 0) max_pause = 0;
     if (max_pause > 60) max_pause = 60;
 
+    std::cout << Config::current_time() << "Enable verbose mode? (prints active block per thread) [y/N]: ";
+    std::getline(std::cin, input);
+    if (!input.empty() && (input == "y" || input == "Y")) {
+        Config::VERBOSE_MODE = true;
+    }
+
     if (scan_mode == Scanner::ScanMode::RANDOM) {
         std::cout << Config::current_time() << "[WARNING] Random mode enabled. Checkpoints will NOT save your resume position, only total keys processed and elapsed time!\n";
     }
@@ -140,6 +146,7 @@ int main() {
     if (max_pause > 0) {
         std::cout << Config::current_time() << "Max Random Pause: " << max_pause << "s\n";
     }
+    std::cout << Config::current_time() << "Verbose Mode:     " << (Config::VERBOSE_MODE ? "Enabled" : "Disabled") << "\n";
     std::cout << Config::current_time() << "Search Range: 0x" << lower_bound.to_hex() << " to 0x" << upper_bound.to_hex() << "\n";
 
     Types::Hash160 target_hash160_bytes;

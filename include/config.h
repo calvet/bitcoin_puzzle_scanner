@@ -18,6 +18,9 @@ namespace Config {
     // Threading configuration
     const int DEFAULT_WORKER_THREADS = 2; // Default to 2 worker threads
 
+    // Verbose mode (off by default) – prints which block each thread is working on
+    inline bool VERBOSE_MODE = false;
+
     // Checkpoint configuration
     inline int CHECKPOINT_INTERVAL_SECONDS = 15;
     const std::string CHECKPOINT_DIR = "checkpoints";
