@@ -16,6 +16,11 @@
 
 namespace Scanner {
 
+    enum class ScanMode {
+        SEQUENTIAL,
+        RANDOM
+    };
+
     struct WorkerConfig {
         Types::UInt256 start_key;
         Types::UInt256 end_key;
@@ -29,7 +34,8 @@ namespace Scanner {
             Types::UInt256 upper_bound,
             const Types::Hash160& target_hash160,
             int num_threads = Config::DEFAULT_WORKER_THREADS,
-            int puzzle_number = 0
+            int puzzle_number = 0,
+            ScanMode mode = ScanMode::SEQUENTIAL
         );
         ~ScannerEngine();
 
@@ -41,6 +47,7 @@ namespace Scanner {
         Types::UInt256 upper_bound_;
         Types::Hash160 target_hash160_;
         int num_threads_;
+        ScanMode mode_;
 
         std::vector<std::thread> workers_;
         std::atomic<bool> running_;

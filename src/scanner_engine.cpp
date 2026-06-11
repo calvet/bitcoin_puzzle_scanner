@@ -18,12 +18,14 @@ namespace Scanner {
         Types::UInt256 upper_bound,
         const Types::Hash160& target_hash160,
         int num_threads,
-        int puzzle_number
+        int puzzle_number,
+        ScanMode mode
     )
         : lower_bound_(lower_bound),
           upper_bound_(upper_bound),
           target_hash160_(target_hash160),
           num_threads_(num_threads),
+          mode_(mode),
           running_(false),
           next_chunk_start_key_(lower_bound),
           progress_manager_(lower_bound, upper_bound, puzzle_number, num_threads),
@@ -38,7 +40,11 @@ namespace Scanner {
                     std::cout << Config::current_time() << "Resuming from checkpoint. Keys processed: " << loaded_stats.keys_processed_total.q0 << "\n";
                     progress_manager_.start_scan(); // Re-initialize start time
                     progress_manager_.update_progress(loaded_stats.keys_processed_total.q0, loaded_stats.current_position);
-                    next_chunk_start_key_ = loaded_stats.current_position;
+                    if (mode_ == ScanMode::SEQUENTIAL) {
+                        next_chunk_start_key_ = loaded_stats.current_position;
+                    } else {
+                        std::cout << Config::current_time() << "Random mode selected: ignoring saved position, but keeping total processed count.\n";
+                    }
                     // TODO: Distribute loaded_worker_states to individual workers if needed
                 } else {
                     std::cerr << Config::current_time() << "Checkpoint is for a different puzzle or range. Starting new scan.\n";
@@ -163,8 +169,16 @@ namespace Scanner {
             Types::UInt256 chunk_start_key;
             {
                 std::lock_guard<std::mutex> lock(chunk_mutex_);
-                chunk_start_key = next_chunk_start_key_;
-                next_chunk_start_key_ += CHUNK_SIZE;
+                if (mode_ == ScanMode::RANDOM) {
+                    Types::UInt256 upper_random = upper_bound_;
+                    if (upper_random > lower_bound_ + CHUNK_SIZE) {
+                        upper_random = upper_bound_.subtract(CHUNK_SIZE);
+                    }
+                    chunk_start_key = Types::UInt256::generate_random(lower_bound_, upper_random);
+                } else {
+                    chunk_start_key = next_chunk_start_key_;
+                    next_chunk_start_key_ += CHUNK_SIZE;
+                }
             }
             Types::UInt256 chunk_end_key = chunk_start_key + (CHUNK_SIZE - 1);
             if (chunk_end_key > upper_bound_) {

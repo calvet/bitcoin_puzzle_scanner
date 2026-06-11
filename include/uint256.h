@@ -7,6 +7,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <algorithm>
+#include <random>
 
 namespace Types {
 
@@ -164,6 +165,43 @@ namespace Types {
             d += static_cast<double>(q1) * f;
             d += static_cast<double>(q0);
             return d;
+        }
+
+        UInt256 subtract(const UInt256& other) const {
+            UInt256 res = *this;
+            uint64_t borrow = 0;
+
+            uint64_t old_q0 = res.q0;
+            res.q0 -= other.q0;
+            if (old_q0 < other.q0) borrow = 1; else borrow = 0;
+
+            uint64_t old_q1 = res.q1;
+            res.q1 -= (other.q1 + borrow);
+            if (old_q1 < other.q1 + borrow || (borrow && old_q1 == other.q1)) borrow = 1; else borrow = 0;
+
+            uint64_t old_q2 = res.q2;
+            res.q2 -= (other.q2 + borrow);
+            if (old_q2 < other.q2 + borrow || (borrow && old_q2 == other.q2)) borrow = 1; else borrow = 0;
+
+            res.q3 -= (other.q3 + borrow);
+            return res;
+        }
+
+        UInt256 operator&(const UInt256& other) const {
+            return UInt256(q3 & other.q3, q2 & other.q2, q1 & other.q1, q0 & other.q0);
+        }
+
+        static UInt256 generate_random(const UInt256& min, const UInt256& max) {
+            std::random_device rd;
+            std::mt19937_64 gen(rd());
+            std::uniform_int_distribution<uint64_t> dist;
+            
+            UInt256 diff = max.subtract(min); 
+            UInt256 rand_val(dist(gen), dist(gen), dist(gen), dist(gen));
+            
+            // For Bitcoin puzzles, `diff` is a mask of 1s (e.g. 0x0...00FFFF...).
+            // Bitwise AND effectively limits the random value to `[0, diff]`.
+            return min + (rand_val & diff);
         }
     };
 
