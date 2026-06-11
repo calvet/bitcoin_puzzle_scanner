@@ -195,7 +195,7 @@ namespace Scanner {
                 std::cout << Config::current_time()
                           << "Worker " << worker_id
                           << ": processing block 0x" << chunk_start_key.to_hex()
-                          << " – 0x" << chunk_end_key.to_hex() << "\n";
+                          << " to 0x" << chunk_end_key.to_hex() << "\n";
             }
 
             // Initialize current_point for this chunk
