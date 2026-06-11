@@ -35,7 +35,8 @@ namespace Scanner {
             const Types::Hash160& target_hash160,
             int num_threads = Config::DEFAULT_WORKER_THREADS,
             int puzzle_number = 0,
-            ScanMode mode = ScanMode::SEQUENTIAL
+            ScanMode mode = ScanMode::SEQUENTIAL,
+            int max_pause_seconds = 0
         );
         ~ScannerEngine();
 
@@ -48,6 +49,7 @@ namespace Scanner {
         Types::Hash160 target_hash160_;
         int num_threads_;
         ScanMode mode_;
+        int max_pause_seconds_;
 
         std::vector<std::thread> workers_;
         std::atomic<bool> running_;

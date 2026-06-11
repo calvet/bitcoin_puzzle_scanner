@@ -19,13 +19,15 @@ namespace Scanner {
         const Types::Hash160& target_hash160,
         int num_threads,
         int puzzle_number,
-        ScanMode mode
+        ScanMode mode,
+        int max_pause_seconds
     )
         : lower_bound_(lower_bound),
           upper_bound_(upper_bound),
           target_hash160_(target_hash160),
           num_threads_(num_threads),
           mode_(mode),
+          max_pause_seconds_(max_pause_seconds),
           running_(false),
           next_chunk_start_key_(lower_bound),
           progress_manager_(lower_bound, upper_bound, puzzle_number, num_threads),
@@ -239,6 +241,20 @@ namespace Scanner {
             }
 
             progress_manager_.update_progress((chunk_end_key - chunk_start_key) + 1, chunk_end_key);
+
+            // Random pause logic to alleviate CPU load
+            if (max_pause_seconds_ > 0 && running_.load()) {
+                std::random_device rd;
+                std::mt19937 gen(rd());
+                std::uniform_int_distribution<> dist(0, max_pause_seconds_);
+                int pause_time = dist(gen);
+                if (pause_time > 0) {
+                    // Sleep in 100ms increments to stay responsive to stop requests
+                    for (int s = 0; s < pause_time * 10 && running_.load(); ++s) {
+                        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                    }
+                }
+            }
         }
     }
 

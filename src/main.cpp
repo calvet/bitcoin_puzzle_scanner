@@ -114,6 +114,15 @@ int main() {
     }
     Scanner::ScanMode scan_mode = (mode_selection == 2) ? Scanner::ScanMode::RANDOM : Scanner::ScanMode::SEQUENTIAL;
 
+    int max_pause = 0;
+    std::cout << Config::current_time() << "Max random pause between blocks (0 to 60s) [Default 0]: ";
+    std::getline(std::cin, input);
+    if (!input.empty()) {
+        try { max_pause = std::stoi(input); } catch (...) {}
+    }
+    if (max_pause < 0) max_pause = 0;
+    if (max_pause > 60) max_pause = 60;
+
     if (scan_mode == Scanner::ScanMode::RANDOM) {
         std::cout << Config::current_time() << "[WARNING] Random mode enabled. Checkpoints will NOT save your resume position, only total keys processed and elapsed time!\n";
     }
@@ -127,6 +136,9 @@ int main() {
     std::cout << Config::current_time() << "Target HASH160: " << target_hash_hex << "\n";
     std::cout << Config::current_time() << "Threads: " << num_threads << "\n";
     std::cout << Config::current_time() << "Scan Mode: " << (scan_mode == Scanner::ScanMode::SEQUENTIAL ? "Sequential" : "Random") << "\n";
+    if (max_pause > 0) {
+        std::cout << Config::current_time() << "Max Random Pause: " << max_pause << "s\n";
+    }
     std::cout << Config::current_time() << "Search Range: 0x" << lower_bound.to_hex() << " to 0x" << upper_bound.to_hex() << "\n";
 
     Types::Hash160 target_hash160_bytes;
@@ -143,7 +155,8 @@ int main() {
             target_hash160_bytes,
             num_threads,
             puzzle_num,
-            scan_mode
+            scan_mode,
+            max_pause
         );
         engine.start();
 
