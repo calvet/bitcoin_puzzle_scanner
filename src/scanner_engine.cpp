@@ -263,7 +263,9 @@ namespace Scanner {
                     std::uniform_int_distribution<> dist(1, max_pause_seconds_);
                     int pause_time = dist(gen);
                     if (pause_time > 0) {
-                        std::cout << Config::current_time() << "Worker " << worker_id << ": Pausing for " << pause_time << " seconds.\n";
+                        if (Config::VERBOSE_MODE) {
+                            std::cout << Config::current_time() << "Worker " << worker_id << ": Pausing for " << pause_time << " seconds.\n";
+                        }
                         // Sleep in 100ms increments to stay responsive to stop requests
                         for (int s = 0; s < pause_time * 10 && running_.load(); ++s) {
                             std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -305,9 +307,15 @@ namespace Scanner {
             }
             if (percentage > 100.0) percentage = 100.0;
 
-            std::cout << Config::current_time() << "Checkpoint saved at key: " << current_stats.current_position.to_hex() 
-                      << " | Elapsed: " << time_str 
-                      << " | Progress: " << std::fixed << std::setprecision(4) << percentage << "%\n";
+            if (mode_ != ScanMode::RANDOM) {
+                std::cout << Config::current_time() << "Checkpoint saved at key: " << current_stats.current_position.to_hex() 
+                          << " | Elapsed: " << time_str 
+                          << " | Progress: " << std::fixed << std::setprecision(4) << percentage << "%\n";
+            } else {
+                std::cout << Config::current_time() << "Checkpoint saved"
+                          << " | Elapsed: " << time_str 
+                          << " | Progress: " << std::fixed << std::setprecision(4) << percentage << "%\n";
+            }
         }
     }
 

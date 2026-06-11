@@ -124,7 +124,7 @@ int main() {
     if (max_pause < 0) max_pause = 0;
     if (max_pause > 60) max_pause = 60;
 
-    std::cout << Config::current_time() << "Enable verbose mode? (prints active block per thread) [y/N]: ";
+    std::cout << Config::current_time() << "Enable verbose mode? (prints active block per thread) [y/N] [Default N]: ";
     std::getline(std::cin, input);
     if (!input.empty() && (input == "y" || input == "Y")) {
         Config::VERBOSE_MODE = true;
