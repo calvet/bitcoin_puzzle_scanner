@@ -96,12 +96,13 @@ int main() {
     if (num_threads < 1) num_threads = 1;
     if (num_threads > max_threads) num_threads = max_threads;
 
-    std::cout << Config::current_time() << "Checkpoint interval in seconds [Default 60]: ";
+    std::cout << Config::current_time() << "Checkpoint interval in seconds [Default 15]: ";
     std::getline(std::cin, input);
     if (!input.empty()) {
         try { Config::CHECKPOINT_INTERVAL_SECONDS = std::stoi(input); } catch (...) {}
     }
-    if (Config::CHECKPOINT_INTERVAL_SECONDS < 1) Config::CHECKPOINT_INTERVAL_SECONDS = 60;
+    if (Config::CHECKPOINT_INTERVAL_SECONDS < 1) Config::CHECKPOINT_INTERVAL_SECONDS = 15;
+    if (Config::CHECKPOINT_INTERVAL_SECONDS > 300) Config::CHECKPOINT_INTERVAL_SECONDS = 300;
 
     int mode_selection = 1;
     std::cout << Config::current_time() << "Choose Scan Mode:\n";
