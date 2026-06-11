@@ -96,6 +96,13 @@ int main() {
     if (num_threads < 1) num_threads = 1;
     if (num_threads > max_threads) num_threads = max_threads;
 
+    std::cout << Config::current_time() << "Checkpoint interval in seconds [Default 60]: ";
+    std::getline(std::cin, input);
+    if (!input.empty()) {
+        try { Config::CHECKPOINT_INTERVAL_SECONDS = std::stoi(input); } catch (...) {}
+    }
+    if (Config::CHECKPOINT_INTERVAL_SECONDS < 1) Config::CHECKPOINT_INTERVAL_SECONDS = 60;
+
     Types::UInt256 lower_bound = get_lower_bound(puzzle_num);
     Types::UInt256 upper_bound = get_upper_bound(puzzle_num);
 
@@ -125,8 +132,16 @@ int main() {
 
         auto stats = engine.get_scan_stats();
         if (stats.match_found) {
+            auto now = std::chrono::steady_clock::now();
+            auto elapsed_seconds = std::chrono::duration_cast<std::chrono::seconds>(now - stats.start_time).count();
+            int hours = elapsed_seconds / 3600;
+            int minutes = (elapsed_seconds % 3600) / 60;
+            int seconds = elapsed_seconds % 60;
+            std::string time_str = std::to_string(hours) + "h " + std::to_string(minutes) + "m " + std::to_string(seconds) + "s";
+
             std::cout << Config::current_time() << "========================================================\n";
             std::cout << Config::current_time() << "MATCH FOUND!\n";
+            std::cout << Config::current_time() << "Time Taken:            " << time_str << "\n";
             std::cout << Config::current_time() << "Private Key (Hex):     " << stats.found_private_key_hex << "\n";
             std::cout << Config::current_time() << "Public Key (Comp.):    " << stats.found_public_key_compressed_hex << "\n";
             std::cout << Config::current_time() << "Derived Address:       " << stats.found_address << "\n";
@@ -136,6 +151,7 @@ int main() {
             std::ofstream out_file(filename);
             if (out_file.is_open()) {
                 out_file << Config::current_time() << "MATCH FOUND FOR PUZZLE #" << puzzle_num << "\n";
+                out_file << Config::current_time() << "Time Taken:            " << time_str << "\n";
                 out_file << Config::current_time() << "Private Key (Hex):     " << stats.found_private_key_hex << "\n";
                 out_file << Config::current_time() << "Public Key (Comp.):    " << stats.found_public_key_compressed_hex << "\n";
                 out_file << Config::current_time() << "Derived Address:       " << stats.found_address << "\n";

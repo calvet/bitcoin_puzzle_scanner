@@ -243,7 +243,16 @@ namespace Scanner {
             Progress::ScanStats current_stats = progress_manager_.get_stats();
             std::vector<Checkpoint::WorkerCheckpointState> worker_states; // TODO: Populate with actual worker states
             checkpoint_manager_.save_checkpoint(current_stats, worker_states);
-            std::cout << Config::current_time() << "Checkpoint saved at key: " << current_stats.current_position.to_hex() << "\n";
+
+            auto now = std::chrono::steady_clock::now();
+            auto elapsed_seconds = std::chrono::duration_cast<std::chrono::seconds>(now - current_stats.start_time).count();
+            int hours = elapsed_seconds / 3600;
+            int minutes = (elapsed_seconds % 3600) / 60;
+            int seconds = elapsed_seconds % 60;
+            std::string time_str = std::to_string(hours) + "h " + std::to_string(minutes) + "m " + std::to_string(seconds) + "s";
+
+            std::cout << Config::current_time() << "Checkpoint saved at key: " << current_stats.current_position.to_hex() 
+                      << " | Elapsed: " << time_str << "\n";
         }
     }
 
