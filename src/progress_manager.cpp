@@ -30,6 +30,11 @@ namespace Progress {
         stats_.current_position = current_chunk_end_key;
     }
 
+    void ProgressManager::add_keys_processed(uint64_t keys_processed) {
+        std::lock_guard<std::mutex> lock(stats_mutex_);
+        stats_.keys_processed_total += keys_processed;
+    }
+
     void ProgressManager::report_match(const std::string& priv_key_hex, const std::string& pub_key_compressed_hex, const std::string& address) {
         std::lock_guard<std::mutex> lock(stats_mutex_);
         stats_.match_found = true;

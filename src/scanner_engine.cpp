@@ -240,7 +240,11 @@ namespace Scanner {
                 worker_checkpoint_state.current_private_key_value = current_key_value;
             }
 
-            progress_manager_.update_progress((chunk_end_key - chunk_start_key) + 1, chunk_end_key);
+            if (mode_ == ScanMode::SEQUENTIAL) {
+                progress_manager_.update_progress((chunk_end_key - chunk_start_key) + 1, chunk_end_key);
+            } else {
+                progress_manager_.add_keys_processed((chunk_end_key - chunk_start_key) + 1);
+            }
 
             // Random pause logic to alleviate CPU load (1 in 10 chance to trigger)
             if (max_pause_seconds_ > 0 && running_.load()) {

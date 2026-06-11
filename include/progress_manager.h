@@ -30,6 +30,7 @@ namespace Progress {
 
         void start_scan();
         void update_progress(uint64_t keys_scanned_in_chunk, Types::UInt256 current_chunk_end_key);
+        void add_keys_processed(uint64_t keys_processed);
         void report_match(const std::string& priv_key_hex, const std::string& pub_key_compressed_hex, const std::string& address);
         ScanStats get_stats() const;
         void display_dashboard() const;
