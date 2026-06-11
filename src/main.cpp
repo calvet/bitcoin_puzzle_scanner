@@ -82,7 +82,7 @@ int main() {
     std::string target_address = puzzle_info.address;
 
     if (puzzle_info.solved) {
-        std::cout << Config::current_time() << "[WARNING] Puzzle #" << puzzle_num << " is already marked as SOLVED in the directory!\n";
+        std::cout << Config::current_time() << "[WARNING] Puzzle #" << puzzle_num << " is already marked as SOLVED in the Puzzle Website!\n";
     }
 
     int max_threads = std::thread::hardware_concurrency();
