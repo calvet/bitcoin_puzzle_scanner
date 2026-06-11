@@ -242,16 +242,20 @@ namespace Scanner {
 
             progress_manager_.update_progress((chunk_end_key - chunk_start_key) + 1, chunk_end_key);
 
-            // Random pause logic to alleviate CPU load
+            // Random pause logic to alleviate CPU load (1 in 10 chance to trigger)
             if (max_pause_seconds_ > 0 && running_.load()) {
                 std::random_device rd;
                 std::mt19937 gen(rd());
-                std::uniform_int_distribution<> dist(0, max_pause_seconds_);
-                int pause_time = dist(gen);
-                if (pause_time > 0) {
-                    // Sleep in 100ms increments to stay responsive to stop requests
-                    for (int s = 0; s < pause_time * 10 && running_.load(); ++s) {
-                        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                std::uniform_int_distribution<> chance_dist(1, 10);
+                
+                if (chance_dist(gen) == 1) { // 10% chance to pause
+                    std::uniform_int_distribution<> dist(1, max_pause_seconds_);
+                    int pause_time = dist(gen);
+                    if (pause_time > 0) {
+                        // Sleep in 100ms increments to stay responsive to stop requests
+                        for (int s = 0; s < pause_time * 10 && running_.load(); ++s) {
+                            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                        }
                     }
                 }
             }
