@@ -41,6 +41,9 @@ namespace ECC {
         bool add_generator();
         bool serialize_compressed(Types::PublicKeyCompressed& pub_key) const;
 
+        ::Point& get_raw() { return pubkey_; }
+        const ::Point& get_raw() const { return pubkey_; }
+
     private:
         const Context& ctx_;
         ::Point pubkey_;
@@ -48,6 +51,9 @@ namespace ECC {
     
     // Alias to match old API
     using Point = PointWrapper;
+
+    // Batch add 4G to 4 points simultaneously
+    bool batch_add_4G(PointWrapper& p0, PointWrapper& p1, PointWrapper& p2, PointWrapper& p3, const Context& ctx);
 
 }
 
