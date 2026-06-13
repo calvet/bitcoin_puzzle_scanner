@@ -100,6 +100,7 @@ int main() {
             if (max_pause > 60) max_pause = 60;
 
             std::cout << Config::current_time() << "Loaded thread and other configurations from config.txt\n";
+            loaded_from_config = true;
             
             // Always ask for the puzzle number
             std::cout << Config::current_time() << "Choose the Puzzle number (1 to 160)\n";
