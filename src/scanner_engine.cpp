@@ -299,6 +299,9 @@ namespace Scanner {
     }
 
     void ScannerEngine::checkpoint_thread_func() {
+        double last_keys_processed = progress_manager_.get_stats().keys_processed_total.get_double();
+        auto last_time = std::chrono::steady_clock::now();
+
         while (running_.load() && !progress_manager_.is_match_found()) {
             std::unique_lock<std::mutex> lock(checkpoint_mutex_);
             checkpoint_cv_.wait_for(lock, std::chrono::seconds(Config::CHECKPOINT_INTERVAL_SECONDS), [&] {
@@ -329,7 +332,13 @@ namespace Scanner {
             }
             if (percentage > 100.0) percentage = 100.0;
 
-            double keys_per_sec = elapsed_seconds > 0 ? (keys_processed / elapsed_seconds) : 0.0;
+            double delta_time = std::chrono::duration<double>(now - last_time).count();
+            double delta_keys = keys_processed - last_keys_processed;
+            double keys_per_sec = delta_time > 0 ? (delta_keys / delta_time) : 0.0;
+
+            last_keys_processed = keys_processed;
+            last_time = now;
+
 
             std::string keys_str = format_large_number(keys_processed) + " / " + format_large_number(range_total);
             std::string kps_str = format_large_number(keys_per_sec) + "/s";
