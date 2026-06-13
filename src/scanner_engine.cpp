@@ -276,6 +276,28 @@ namespace Scanner {
         }
     }
 
+    static std::string format_large_number(double num) {
+        const char* suffixes[] = {"", "K", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc"};
+        int suffix_index = 0;
+        while (num >= 1000.0 && suffix_index < 11) {
+            num /= 1000.0;
+            suffix_index++;
+        }
+        std::stringstream ss;
+        if (suffix_index == 0) {
+            ss << static_cast<uint64_t>(num);
+        } else {
+            ss << std::fixed << std::setprecision(1) << num << suffixes[suffix_index];
+        }
+        std::string res = ss.str();
+        std::string suffix = suffixes[suffix_index];
+        size_t suffix_len = suffix.length();
+        if (res.length() >= suffix_len + 2 && res.substr(res.length() - suffix_len - 2, 2) == ".0") {
+            res.erase(res.length() - suffix_len - 2, 2);
+        }
+        return res;
+    }
+
     void ScannerEngine::checkpoint_thread_func() {
         while (running_.load() && !progress_manager_.is_match_found()) {
             std::unique_lock<std::mutex> lock(checkpoint_mutex_);
@@ -307,13 +329,22 @@ namespace Scanner {
             }
             if (percentage > 100.0) percentage = 100.0;
 
+            double keys_per_sec = elapsed_seconds > 0 ? (keys_processed / elapsed_seconds) : 0.0;
+
+            std::string keys_str = format_large_number(keys_processed) + " / " + format_large_number(range_total);
+            std::string kps_str = format_large_number(keys_per_sec) + "/s";
+
             if (mode_ != ScanMode::RANDOM) {
                 std::cout << Config::current_time() << "Checkpoint saved at key: " << current_stats.current_position.to_hex() 
                           << " | Elapsed: " << time_str 
+                          << " | Keys: " << keys_str
+                          << " | Speed: " << kps_str
                           << " | Progress: " << std::fixed << std::setprecision(4) << percentage << "%\n";
             } else {
                 std::cout << Config::current_time() << "Checkpoint saved"
                           << " | Elapsed: " << time_str 
+                          << " | Keys: " << keys_str
+                          << " | Speed: " << kps_str
                           << " | Progress: " << std::fixed << std::setprecision(4) << percentage << "%\n";
             }
         }

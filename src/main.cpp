@@ -141,7 +141,7 @@ int main() {
     if (!input.empty() && (input == "y" || input == "Y")) {
         std::cout << Config::current_time() << "Enter Telegram Bot Token: ";
         std::getline(std::cin, telegram_token);
-        std::cout << Config::current_time() << "Enter Telegram Chat ID (e.g., from @userinfobot): ";
+        std::cout << Config::current_time() << "Enter Telegram Chat ID (e.g., 1504239762): ";
         std::getline(std::cin, telegram_chat_id);
 
         if (!telegram_token.empty() && !telegram_chat_id.empty()) {
