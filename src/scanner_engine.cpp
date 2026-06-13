@@ -166,7 +166,8 @@ namespace Scanner {
         std::vector<::Point> g_table(256);
         ::Point current_g = worker_ecc_context.get()->G;
         g_table[1] = current_g;
-        for (int i = 2; i < 256; ++i) {
+        g_table[2] = worker_ecc_context.get()->DoubleDirect(current_g);
+        for (int i = 3; i < 256; ++i) {
             g_table[i] = worker_ecc_context.get()->AddDirect(g_table[i-1], current_g);
         }
         ::Point G256 = worker_ecc_context.get()->AddDirect(g_table[255], current_g);
@@ -276,7 +277,12 @@ namespace Scanner {
 
                 // Advance current point by 256G
                 if (current_key_value + 256 <= upper_bound_) { 
-                    ::Point next_p = worker_ecc_context.get()->AddDirect(current_point.get_raw(), G256);
+                    ::Point next_p;
+                    if (current_key_value == 256) {
+                        next_p = worker_ecc_context.get()->DoubleDirect(current_point.get_raw());
+                    } else {
+                        next_p = worker_ecc_context.get()->AddDirect(current_point.get_raw(), G256);
+                    }
                     current_point.get_raw().Set(next_p);
                 }
 
