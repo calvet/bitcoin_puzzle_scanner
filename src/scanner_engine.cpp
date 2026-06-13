@@ -28,7 +28,6 @@ namespace Scanner {
           num_threads_(num_threads),
           mode_(mode),
           max_pause_seconds_(max_pause_seconds),
-          is_compressed_(puzzle_number >= 66 || puzzle_number == 0),
           running_(false),
           next_chunk_start_key_(lower_bound),
           progress_manager_(lower_bound, upper_bound, puzzle_number, num_threads),
@@ -237,7 +236,7 @@ namespace Scanner {
                     if (current_key_value + j > chunk_end_key) break;
 
                     uint8_t h0[20], h1[20], h2[20], h3[20];
-                    worker_ecc_context.get()->GetHash160(P2PKH, is_compressed_, points_batch[j], points_batch[j+1], points_batch[j+2], points_batch[j+3], h0, h1, h2, h3);
+                    worker_ecc_context.get()->GetHash160(P2PKH, true, points_batch[j], points_batch[j+1], points_batch[j+2], points_batch[j+3], h0, h1, h2, h3);
 
                     uint8_t* hashes[4] = { h0, h1, h2, h3 };
                     

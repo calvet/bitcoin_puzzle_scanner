@@ -50,7 +50,6 @@ namespace Scanner {
         int num_threads_;
         ScanMode mode_;
         int max_pause_seconds_;
-        bool is_compressed_;
 
         std::vector<std::thread> workers_;
         std::atomic<bool> running_;
