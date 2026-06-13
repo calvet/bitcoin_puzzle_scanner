@@ -58,18 +58,142 @@ int main() {
         std::cout << Config::current_time() << "----------------------------\n";
     }
 
-    std::cout << Config::current_time() << "Choose the Puzzle number (1 to 160)\n";
-    std::cout << Config::current_time() << "[Note: Puzzle #71 is currently the easiest available with balance!]\n";
-    std::cout << Config::current_time() << "Puzzle [Default 71]: ";
-    std::string input;
-    std::getline(std::cin, input);
-    
     int puzzle_num = 71;
-    if (!input.empty()) {
-        try { puzzle_num = std::stoi(input); } catch (...) {}
+    int max_threads = std::thread::hardware_concurrency();
+    if (max_threads == 0) max_threads = 4;
+    int num_threads = max_threads;
+    int mode_selection = 1;
+    int max_pause = 0;
+    std::string telegram_token = "";
+    std::string telegram_chat_id = "";
+    std::string input;
+
+    bool loaded_from_config = false;
+    std::ifstream config_in("config.txt");
+    if (config_in.is_open()) {
+        std::string line;
+        try {
+            if (std::getline(config_in, line)) puzzle_num = std::stoi(line);
+            if (std::getline(config_in, line)) num_threads = std::stoi(line);
+            if (std::getline(config_in, line)) Config::CHECKPOINT_INTERVAL_SECONDS = std::stoi(line);
+            if (std::getline(config_in, line)) mode_selection = std::stoi(line);
+            if (std::getline(config_in, line)) max_pause = std::stoi(line);
+            if (std::getline(config_in, line)) Config::VERBOSE_MODE = (line == "1");
+            if (std::getline(config_in, line)) telegram_token = line;
+            if (std::getline(config_in, line)) telegram_chat_id = line;
+            // Apply validation and bounds
+            if (puzzle_num < 1) puzzle_num = 1;
+            if (puzzle_num > 160) puzzle_num = 160;
+            
+            if (num_threads < 1) num_threads = 1;
+            if (num_threads > max_threads) num_threads = max_threads;
+            
+            if (Config::CHECKPOINT_INTERVAL_SECONDS < 1) Config::CHECKPOINT_INTERVAL_SECONDS = 15;
+            if (Config::CHECKPOINT_INTERVAL_SECONDS > 300) Config::CHECKPOINT_INTERVAL_SECONDS = 300;
+            
+            if (mode_selection != 1 && mode_selection != 2) mode_selection = 1;
+            
+            if (max_pause < 0) max_pause = 0;
+            if (max_pause > 60) max_pause = 60;
+
+            loaded_from_config = true;
+            std::cout << Config::current_time() << "Loaded configuration from config.txt\n";
+        } catch (...) {
+            std::cout << Config::current_time() << "Error parsing config.txt. Falling back to manual entry.\n";
+        }
+        config_in.close();
     }
-    if (puzzle_num < 1) puzzle_num = 1;
-    if (puzzle_num > 160) puzzle_num = 160;
+
+    if (!loaded_from_config) {
+        std::cout << Config::current_time() << "Choose the Puzzle number (1 to 160)\n";
+        std::cout << Config::current_time() << "[Note: Puzzle #71 is currently the easiest available with balance!]\n";
+        std::cout << Config::current_time() << "Puzzle [Default 71]: ";
+        std::getline(std::cin, input);
+        
+        if (!input.empty()) {
+            try { puzzle_num = std::stoi(input); } catch (...) {}
+        }
+        if (puzzle_num < 1) puzzle_num = 1;
+        if (puzzle_num > 160) puzzle_num = 160;
+
+        std::cout << Config::current_time() << "How many threads do you want to use? (Max: " << max_threads << ") [Default: " << max_threads << "]: ";
+        std::getline(std::cin, input);
+        if (!input.empty()) {
+            try { num_threads = std::stoi(input); } catch (...) {}
+        }
+        if (num_threads < 1) num_threads = 1;
+        if (num_threads > max_threads) num_threads = max_threads;
+
+        std::cout << Config::current_time() << "Checkpoint interval in seconds [Default 15]: ";
+        std::getline(std::cin, input);
+        if (!input.empty()) {
+            try { Config::CHECKPOINT_INTERVAL_SECONDS = std::stoi(input); } catch (...) {}
+        }
+        if (Config::CHECKPOINT_INTERVAL_SECONDS < 1) Config::CHECKPOINT_INTERVAL_SECONDS = 15;
+        if (Config::CHECKPOINT_INTERVAL_SECONDS > 300) Config::CHECKPOINT_INTERVAL_SECONDS = 300;
+
+        std::cout << Config::current_time() << "Choose Scan Mode:\n";
+        std::cout << Config::current_time() << "[1] Sequential (Default)\n";
+        std::cout << Config::current_time() << "[2] Random\n";
+        std::cout << Config::current_time() << "Mode [Default 1]: ";
+        std::getline(std::cin, input);
+        if (!input.empty()) {
+            try { mode_selection = std::stoi(input); } catch (...) {}
+        }
+
+        std::cout << Config::current_time() << "Max random pause between blocks (0 to 60s) [Default 0]: ";
+        std::getline(std::cin, input);
+        if (!input.empty()) {
+            try { max_pause = std::stoi(input); } catch (...) {}
+        }
+        if (max_pause < 0) max_pause = 0;
+        if (max_pause > 60) max_pause = 60;
+
+        std::cout << Config::current_time() << "Enable verbose mode? (prints active block per thread) [y/N] [Default N]: ";
+        std::getline(std::cin, input);
+        if (!input.empty() && (input == "y" || input == "Y")) {
+            Config::VERBOSE_MODE = true;
+        }
+
+        std::cout << Config::current_time() << "Enable Telegram notifications? [y/N] [Default N]: ";
+        std::getline(std::cin, input);
+        if (!input.empty() && (input == "y" || input == "Y")) {
+            std::cout << Config::current_time() << "Enter Telegram Bot Token: ";
+            std::getline(std::cin, telegram_token);
+            std::cout << Config::current_time() << "Enter Telegram Chat ID (e.g., 1504239762): ";
+            std::getline(std::cin, telegram_chat_id);
+
+            if (!telegram_token.empty() && !telegram_chat_id.empty()) {
+                std::cout << Config::current_time() << "Sending test message to Telegram...\n";
+#ifdef _WIN32
+                std::string null_dev = " > NUL 2>&1";
+#else
+                std::string null_dev = " > /dev/null 2>&1";
+#endif
+                std::string cmd = "curl -s -X POST https://api.telegram.org/bot" + telegram_token + "/sendMessage -d chat_id=" + telegram_chat_id + " -d text=\"Bitcoin Puzzle Scanner: Notifications enabled successfully!\"" + null_dev;
+                std::system(cmd.c_str());
+            } else {
+                std::cout << Config::current_time() << "Telegram token or chat ID is empty. Notifications disabled.\n";
+                telegram_token = "";
+                telegram_chat_id = "";
+            }
+        }
+
+        // Save config for next run
+        std::ofstream config_out("config.txt");
+        if (config_out.is_open()) {
+            config_out << puzzle_num << "\n"
+                       << num_threads << "\n"
+                       << Config::CHECKPOINT_INTERVAL_SECONDS << "\n"
+                       << mode_selection << "\n"
+                       << max_pause << "\n"
+                       << (Config::VERBOSE_MODE ? "1" : "0") << "\n"
+                       << telegram_token << "\n"
+                       << telegram_chat_id << "\n";
+            config_out.close();
+            std::cout << Config::current_time() << "Configuration saved to config.txt for next run.\n";
+        }
+    }
 
     const auto& puzzles = Config::GetPuzzles();
     if (puzzles.find(puzzle_num) == puzzles.end()) {
@@ -85,79 +209,10 @@ int main() {
         std::cout << Config::current_time() << "[WARNING] Puzzle #" << puzzle_num << " is already marked as SOLVED in the Puzzle Website!\n";
     }
 
-    int max_threads = std::thread::hardware_concurrency();
-    if (max_threads == 0) max_threads = 4;
-    int num_threads = max_threads;
-    std::cout << Config::current_time() << "How many threads do you want to use? (Max: " << max_threads << ") [Default: " << max_threads << "]: ";
-    std::getline(std::cin, input);
-    if (!input.empty()) {
-        try { num_threads = std::stoi(input); } catch (...) {}
-    }
-    if (num_threads < 1) num_threads = 1;
-    if (num_threads > max_threads) num_threads = max_threads;
-
-    std::cout << Config::current_time() << "Checkpoint interval in seconds [Default 15]: ";
-    std::getline(std::cin, input);
-    if (!input.empty()) {
-        try { Config::CHECKPOINT_INTERVAL_SECONDS = std::stoi(input); } catch (...) {}
-    }
-    if (Config::CHECKPOINT_INTERVAL_SECONDS < 1) Config::CHECKPOINT_INTERVAL_SECONDS = 15;
-    if (Config::CHECKPOINT_INTERVAL_SECONDS > 300) Config::CHECKPOINT_INTERVAL_SECONDS = 300;
-
-    int mode_selection = 1;
-    std::cout << Config::current_time() << "Choose Scan Mode:\n";
-    std::cout << Config::current_time() << "[1] Sequential (Default)\n";
-    std::cout << Config::current_time() << "[2] Random\n";
-    std::cout << Config::current_time() << "Mode [Default 1]: ";
-    std::getline(std::cin, input);
-    if (!input.empty()) {
-        try { mode_selection = std::stoi(input); } catch (...) {}
-    }
     Scanner::ScanMode scan_mode = (mode_selection == 2) ? Scanner::ScanMode::RANDOM : Scanner::ScanMode::SEQUENTIAL;
-
-    int max_pause = 0;
-    std::cout << Config::current_time() << "Max random pause between blocks (0 to 60s) [Default 0]: ";
-    std::getline(std::cin, input);
-    if (!input.empty()) {
-        try { max_pause = std::stoi(input); } catch (...) {}
-    }
-    if (max_pause < 0) max_pause = 0;
-    if (max_pause > 60) max_pause = 60;
-
-    std::cout << Config::current_time() << "Enable verbose mode? (prints active block per thread) [y/N] [Default N]: ";
-    std::getline(std::cin, input);
-    if (!input.empty() && (input == "y" || input == "Y")) {
-        Config::VERBOSE_MODE = true;
-    }
 
     if (scan_mode == Scanner::ScanMode::RANDOM) {
         std::cout << Config::current_time() << "[WARNING] Random mode enabled. Checkpoints will NOT save your resume position, only total keys processed and elapsed time!\n";
-    }
-
-    std::string telegram_token = "";
-    std::string telegram_chat_id = "";
-    std::cout << Config::current_time() << "Enable Telegram notifications? [y/N] [Default N]: ";
-    std::getline(std::cin, input);
-    if (!input.empty() && (input == "y" || input == "Y")) {
-        std::cout << Config::current_time() << "Enter Telegram Bot Token: ";
-        std::getline(std::cin, telegram_token);
-        std::cout << Config::current_time() << "Enter Telegram Chat ID (e.g., 1504239762): ";
-        std::getline(std::cin, telegram_chat_id);
-
-        if (!telegram_token.empty() && !telegram_chat_id.empty()) {
-            std::cout << Config::current_time() << "Sending test message to Telegram...\n";
-#ifdef _WIN32
-            std::string null_dev = " > NUL 2>&1";
-#else
-            std::string null_dev = " > /dev/null 2>&1";
-#endif
-            std::string cmd = "curl -s -X POST https://api.telegram.org/bot" + telegram_token + "/sendMessage -d chat_id=" + telegram_chat_id + " -d text=\"Bitcoin Puzzle Scanner: Notifications enabled successfully!\"" + null_dev;
-            std::system(cmd.c_str());
-        } else {
-            std::cout << Config::current_time() << "Telegram token or chat ID is empty. Notifications disabled.\n";
-            telegram_token = "";
-            telegram_chat_id = "";
-        }
     }
 
     Types::UInt256 lower_bound = get_lower_bound(puzzle_num);

@@ -339,7 +339,6 @@ namespace Scanner {
             last_keys_processed = keys_processed;
             last_time = now;
 
-
             std::string keys_str = format_large_number(keys_processed) + " / " + format_large_number(range_total);
             std::string kps_str = format_large_number(keys_per_sec) + "/s";
 
