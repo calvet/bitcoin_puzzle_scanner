@@ -36,7 +36,7 @@ namespace ECC {
         return true;
     }
 
-    bool batch_generate_255(const PointWrapper& base, const std::vector<::Point>& g_table, std::vector<::Point>& out_points, const Context& ctx) {
+    bool batch_generate_255(const PointWrapper& base, const std::vector<::Point>& g_table, std::vector<::Point>& out_points, const Context& /*ctx*/) {
         const ::Point& P = base.get_raw();
         out_points[0] = P;
         
