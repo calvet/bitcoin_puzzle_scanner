@@ -43,8 +43,8 @@ namespace ECC {
         Int dx[256];
         Int dy[256];
         for (int i = 1; i < 256; ++i) {
-            dy[i].ModSub(&g_table[i].y, &P.y);
-            dx[i].ModSub(&g_table[i].x, &P.x);
+            dy[i].ModSub(const_cast<Int*>(&g_table[i].y), const_cast<Int*>(&P.y));
+            dx[i].ModSub(const_cast<Int*>(&g_table[i].x), const_cast<Int*>(&P.x));
         }
 
         Int prod[256];
@@ -76,12 +76,12 @@ namespace ECC {
             ::Point r;
             r.z.SetInt32(1);
 
-            r.x.ModSub(&s2, &P.x);
-            r.x.ModSub(&g_table[i].x);
+            r.x.ModSub(&s2, const_cast<Int*>(&P.x));
+            r.x.ModSub(const_cast<Int*>(&g_table[i].x));
 
-            r.y.ModSub(&g_table[i].x, &r.x);
+            r.y.ModSub(const_cast<Int*>(&g_table[i].x), &r.x);
             r.y.ModMulK1(&s);
-            r.y.ModSub(&g_table[i].y);
+            r.y.ModSub(const_cast<Int*>(&g_table[i].y));
 
             out_points[i].Set(r);
         }

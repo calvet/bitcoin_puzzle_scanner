@@ -157,7 +157,6 @@ namespace Scanner {
 
         Types::UInt256 current_key_value;
         Types::PrivateKey priv_key;
-        Types::PublicKeyCompressed pub_key_compressed;
 
         // Worker-specific checkpoint state (for resuming)
         Checkpoint::WorkerCheckpointState worker_checkpoint_state;
