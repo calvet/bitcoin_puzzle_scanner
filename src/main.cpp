@@ -73,7 +73,10 @@ int main() {
     if (config_in.is_open()) {
         std::string line;
         try {
-            if (std::getline(config_in, line)) puzzle_num = std::stoi(line);
+            if (std::getline(config_in, line)) {
+                // Ignore the puzzle num from config file, ask user instead.
+                // puzzle_num = std::stoi(line); 
+            }
             if (std::getline(config_in, line)) num_threads = std::stoi(line);
             if (std::getline(config_in, line)) Config::CHECKPOINT_INTERVAL_SECONDS = std::stoi(line);
             if (std::getline(config_in, line)) mode_selection = std::stoi(line);
@@ -96,10 +99,22 @@ int main() {
             if (max_pause < 0) max_pause = 0;
             if (max_pause > 60) max_pause = 60;
 
-            loaded_from_config = true;
-            std::cout << Config::current_time() << "Loaded configuration from config.txt\n";
+            std::cout << Config::current_time() << "Loaded thread and other configurations from config.txt\n";
+            
+            // Always ask for the puzzle number
+            std::cout << Config::current_time() << "Choose the Puzzle number (1 to 160)\n";
+            std::cout << Config::current_time() << "[Note: Puzzle #71 is currently the easiest available with balance!]\n";
+            std::cout << Config::current_time() << "Puzzle [Default 71]: ";
+            std::getline(std::cin, input);
+            if (!input.empty()) {
+                try { puzzle_num = std::stoi(input); } catch (...) {}
+            }
+            if (puzzle_num < 1) puzzle_num = 1;
+            if (puzzle_num > 160) puzzle_num = 160;
+
         } catch (...) {
             std::cout << Config::current_time() << "Error parsing config.txt. Falling back to manual entry.\n";
+            loaded_from_config = false;
         }
         config_in.close();
     }

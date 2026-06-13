@@ -42,9 +42,16 @@ namespace ECC {
         
         Int dx[256];
         Int dy[256];
+        bool has_zero = false;
+        int zero_idx = -1;
         for (int i = 1; i < 256; ++i) {
             dy[i].ModSub(const_cast<Int*>(&g_table[i].y), const_cast<Int*>(&P.y));
             dx[i].ModSub(const_cast<Int*>(&g_table[i].x), const_cast<Int*>(&P.x));
+            if (dx[i].IsZero()) {
+                dx[i].SetInt32(1); // prevent product from being zero
+                has_zero = true;
+                zero_idx = i;
+            }
         }
 
         Int prod[256];
@@ -84,6 +91,15 @@ namespace ECC {
             r.y.ModSub(const_cast<Int*>(&g_table[i].y));
 
             out_points[i].Set(r);
+        }
+
+        if (has_zero) {
+            if (dy[zero_idx].IsZero()) {
+                ::Point p_copy = P;
+                out_points[zero_idx] = ctx.get()->DoubleDirect(p_copy);
+            } else {
+                out_points[zero_idx].Clear(); // Infinity
+            }
         }
 
         return true;
