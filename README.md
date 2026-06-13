@@ -83,4 +83,4 @@ The scanner features a robust, automatic checkpoint system. It saves your progre
 
 If you found this tool useful, learned from the source code, or managed to find a high-value puzzle and want to show some appreciation, donations are very welcome!
 
-**Meu Endereço Bitcoin:** `1NuGAFYjjg17JjPNCXFZ8HCZQMNWiN9bmy`
+**My Bitcoin Address:** `1NuGAFYjjg17JjPNCXFZ8HCZQMNWiN9bmy`
