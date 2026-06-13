@@ -34,6 +34,28 @@ Types::UInt256 get_upper_bound(int N) {
     return res;
 }
 
+static std::string format_large_number(double num) {
+    const char* suffixes[] = {"", "K", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc"};
+    int suffix_index = 0;
+    while (num >= 1000.0 && suffix_index < 11) {
+        num /= 1000.0;
+        suffix_index++;
+    }
+    std::stringstream ss;
+    if (suffix_index == 0) {
+        ss << static_cast<uint64_t>(num);
+    } else {
+        ss << std::fixed << std::setprecision(1) << num << suffixes[suffix_index];
+    }
+    std::string res = ss.str();
+    std::string suffix = suffixes[suffix_index];
+    size_t suffix_len = suffix.length();
+    if (res.length() >= suffix_len + 2 && res.substr(res.length() - suffix_len - 2, 2) == ".0") {
+        res.erase(res.length() - suffix_len - 2, 2);
+    }
+    return res;
+}
+
 int main() {
     std::cout << Config::current_time() << "Welcome to Bitcoin Puzzle Scanner!\n";
 
@@ -294,6 +316,7 @@ int main() {
             std::cout << Config::current_time() << "Derived Address:       " << stats.found_address << "\n";
             std::cout << Config::current_time() << "Time Taken:            " << time_str << "\n";
             std::cout << Config::current_time() << "Position in Range:     " << std::fixed << std::setprecision(4) << pos_percentage << "%\n";
+            std::cout << Config::current_time() << "Keys Scanned:          " << format_large_number(stats.keys_processed_total.get_double()) << " / " << format_large_number(range_total) << "\n";
             std::cout << Config::current_time() << "========================================================\n";
 
             std::string filename = "FOUND_PUZZLE_" + std::to_string(puzzle_num) + ".txt";
@@ -305,6 +328,7 @@ int main() {
                 out_file << Config::current_time() << "Derived Address:       " << stats.found_address << "\n";
                 out_file << Config::current_time() << "Time Taken:            " << time_str << "\n";
                 out_file << Config::current_time() << "Position in Range:     " << std::fixed << std::setprecision(4) << pos_percentage << "%\n";
+                out_file << Config::current_time() << "Keys Scanned:          " << format_large_number(stats.keys_processed_total.get_double()) << " / " << format_large_number(range_total) << "\n";
                 out_file.close();
                 std::cout << Config::current_time() << "Details saved to " << filename << "\n";
 
