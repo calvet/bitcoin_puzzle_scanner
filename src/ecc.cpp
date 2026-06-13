@@ -36,54 +36,37 @@ namespace ECC {
         return true;
     }
 
-    bool batch_add_4G(PointWrapper& p0, PointWrapper& p1, PointWrapper& p2, PointWrapper& p3, const Context& ctx) {
-        // Compute 4G
-        ::Point G2 = ctx.get()->DoubleDirect(ctx.get()->G);
-        ::Point G4 = ctx.get()->DoubleDirect(G2);
-
-        ::Point* pts[4] = { &p0.get_raw(), &p1.get_raw(), &p2.get_raw(), &p3.get_raw() };
-        Int dx[4], dy[4];
-
-        for (int i = 0; i < 4; ++i) {
-            dy[i].ModSub(&G4.y, &pts[i]->y);
-            dx[i].ModSub(&G4.x, &pts[i]->x);
+    bool batch_generate_255(const PointWrapper& base, const std::vector<::Point>& g_table, std::vector<::Point>& out_points, const Context& ctx) {
+        const ::Point& P = base.get_raw();
+        out_points[0] = P;
+        
+        Int dx[256];
+        Int dy[256];
+        for (int i = 1; i < 256; ++i) {
+            dy[i].ModSub(&g_table[i].y, &P.y);
+            dx[i].ModSub(&g_table[i].x, &P.x);
         }
 
-        // Montgomery Batch Inversion of dx[0..3]
-        Int prod[4];
-        prod[0].Set(&dx[0]);
-        prod[1].ModMulK1(&prod[0], &dx[1]);
-        prod[2].ModMulK1(&prod[1], &dx[2]);
-        prod[3].ModMulK1(&prod[2], &dx[3]);
+        Int prod[256];
+        prod[1].Set(&dx[1]);
+        for (int i = 2; i < 256; ++i) {
+            prod[i].ModMulK1(&prod[i-1], &dx[i]);
+        }
 
         Int inv;
-        inv.Set(&prod[3]);
+        inv.Set(&prod[255]);
         inv.ModInv(); // Only 1 inversion!
 
-        Int inv_dx[4];
-        // inv_dx[3] = inv * prod[2]
-        inv_dx[3].ModMulK1(&inv, &prod[2]);
-        
-        // inv = inv * dx[3]
-        Int tmp;
-        tmp.ModMulK1(&inv, &dx[3]);
-        inv.Set(&tmp);
+        Int inv_dx[256];
+        for (int i = 255; i > 1; --i) {
+            inv_dx[i].ModMulK1(&inv, &prod[i-1]);
+            Int tmp;
+            tmp.ModMulK1(&inv, &dx[i]);
+            inv.Set(&tmp);
+        }
+        inv_dx[1].Set(&inv);
 
-        // inv_dx[2] = inv * prod[1]
-        inv_dx[2].ModMulK1(&inv, &prod[1]);
-        
-        // inv = inv * dx[2]
-        tmp.ModMulK1(&inv, &dx[2]);
-        inv.Set(&tmp);
-
-        // inv_dx[1] = inv * prod[0]
-        inv_dx[1].ModMulK1(&inv, &prod[0]);
-        
-        // inv_dx[0] = inv = 1 / dx[0]
-        inv_dx[0].Set(&inv);
-
-        // Now compute the new points
-        for (int i = 0; i < 4; ++i) {
+        for (int i = 1; i < 256; ++i) {
             Int s;
             s.ModMulK1(&dy[i], &inv_dx[i]); // s = dy * (1/dx)
 
@@ -93,14 +76,14 @@ namespace ECC {
             ::Point r;
             r.z.SetInt32(1);
 
-            r.x.ModSub(&s2, &pts[i]->x);
-            r.x.ModSub(&G4.x);
+            r.x.ModSub(&s2, &P.x);
+            r.x.ModSub(&g_table[i].x);
 
-            r.y.ModSub(&G4.x, &r.x);
+            r.y.ModSub(&g_table[i].x, &r.x);
             r.y.ModMulK1(&s);
-            r.y.ModSub(&G4.y);
+            r.y.ModSub(&g_table[i].y);
 
-            pts[i]->Set(r); // Copy r back to pts[i]
+            out_points[i].Set(r);
         }
 
         return true;

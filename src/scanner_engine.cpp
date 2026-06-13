@@ -153,12 +153,7 @@ namespace Scanner {
     void ScannerEngine::worker_thread_func(int worker_id) {
         // Each worker needs its own ECC::Context to avoid thread-safety issues with secp256k1
         ECC::Context worker_ecc_context;
-        ECC::Point p[4] = {
-            ECC::Point(worker_ecc_context),
-            ECC::Point(worker_ecc_context),
-            ECC::Point(worker_ecc_context),
-            ECC::Point(worker_ecc_context)
-        };
+        ECC::Point current_point(worker_ecc_context);
 
         Types::UInt256 current_key_value;
         Types::PrivateKey priv_key;
@@ -167,6 +162,17 @@ namespace Scanner {
         // Worker-specific checkpoint state (for resuming)
         Checkpoint::WorkerCheckpointState worker_checkpoint_state;
         worker_checkpoint_state.current_private_key_value = lower_bound_;
+
+        // Precompute G_table for 256 batch processing
+        std::vector<::Point> g_table(256);
+        ::Point current_g = worker_ecc_context.get()->G;
+        g_table[1] = current_g;
+        for (int i = 2; i < 256; ++i) {
+            g_table[i] = worker_ecc_context.get()->AddDirect(g_table[i-1], current_g);
+        }
+        ::Point G256 = worker_ecc_context.get()->AddDirect(g_table[255], current_g);
+
+        std::vector<::Point> points_batch(256);
 
         // Chunking logic
         const uint64_t CHUNK_SIZE = 100000; // Process keys in chunks
@@ -202,50 +208,66 @@ namespace Scanner {
                           << " to 0x" << chunk_end_key.to_hex() << "\n";
             }
 
-            // Initialize 4 points for this chunk
-            for (int i = 0; i < 4; ++i) {
-                priv_key = uint256_to_private_key(chunk_start_key + i);
-                if (!p[i].init_from_private_key(priv_key)) {
-                    std::cerr << Config::current_time() << "Worker " << worker_id << ": Failed to initialize point from private key.\n";
-                    running_ = false;
-                    break;
-                }
+            // Initialize current_point for this chunk
+            priv_key = uint256_to_private_key(chunk_start_key);
+            if (!current_point.init_from_private_key(priv_key)) {
+                std::cerr << Config::current_time() << "Worker " << worker_id << ": Failed to initialize point from private key.\n";
+                running_ = false;
+                break;
             }
-            if (!running_.load()) break;
 
-            for (current_key_value = chunk_start_key; current_key_value <= chunk_end_key; current_key_value += 4) {
+            for (current_key_value = chunk_start_key; current_key_value <= chunk_end_key; current_key_value += 256) {
                 if (!running_.load() || progress_manager_.is_match_found()) {
                     break; // Stop if requested or match found by another thread
                 }
 
-                uint8_t h0[20], h1[20], h2[20], h3[20];
-                worker_ecc_context.get()->GetHash160(P2PKH, true, p[0].get_raw(), p[1].get_raw(), p[2].get_raw(), p[3].get_raw(), h0, h1, h2, h3);
+                // Generate 256 points at once with 1 modular inversion
+                if (!ECC::batch_generate_255(current_point, g_table, points_batch, worker_ecc_context)) {
+                    std::cerr << Config::current_time() << "Worker " << worker_id << ": Failed to batch generate points.\n";
+                    running_ = false;
+                    break;
+                }
 
-                uint8_t* hashes[4] = { h0, h1, h2, h3 };
                 bool match = false;
                 int match_index = -1;
+                Types::Hash160 hash_matched;
 
-                for (int i = 0; i < 4; ++i) {
-                    if (current_key_value + i <= chunk_end_key) {
-                        if (std::equal(hashes[i], hashes[i] + 20, target_hash160_.begin())) {
-                            match = true;
-                            match_index = i;
-                            break;
+                // Hash and compare 4 at a time using SIMD
+                for (int j = 0; j < 256; j += 4) {
+                    if (current_key_value + j > chunk_end_key) break;
+
+                    uint8_t h0[20], h1[20], h2[20], h3[20];
+                    worker_ecc_context.get()->GetHash160(P2PKH, true, points_batch[j], points_batch[j+1], points_batch[j+2], points_batch[j+3], h0, h1, h2, h3);
+
+                    uint8_t* hashes[4] = { h0, h1, h2, h3 };
+                    
+                    for (int i = 0; i < 4; ++i) {
+                        if (current_key_value + j + i <= chunk_end_key) {
+                            if (std::equal(hashes[i], hashes[i] + 20, target_hash160_.begin())) {
+                                match = true;
+                                match_index = j + i;
+                                std::copy(hashes[i], hashes[i] + 20, hash_matched.begin());
+                                break;
+                            }
                         }
                     }
+                    if (match) break;
                 }
 
                 if (match) {
                     std::cout << Config::current_time() << "Worker " << worker_id << ": Match found!\n";
                     Types::UInt256 match_key = current_key_value + match_index;
-                    p[match_index].serialize_compressed(pub_key_compressed);
                     
-                    Types::Hash160 hash_matched;
-                    std::copy(hashes[match_index], hashes[match_index] + 20, hash_matched.begin());
-
+                    // We need the PointWrapper to serialize, points_batch has raw ::Points
+                    ECC::Point matched_point(worker_ecc_context);
+                    matched_point.get_raw().Set(points_batch[match_index]);
+                    
+                    Types::PublicKeyCompressed pub_key_comp;
+                    matched_point.serialize_compressed(pub_key_comp);
+                    
                     progress_manager_.report_match(
                         private_key_to_hex(uint256_to_private_key(match_key)),
-                        public_key_to_hex(pub_key_compressed),
+                        public_key_to_hex(pub_key_comp),
                         hash160_to_address(hash_matched)
                     );
                     running_ = false; // Signal other threads to stop
@@ -253,13 +275,10 @@ namespace Scanner {
                     break;
                 }
 
-                // Incremental point walking: P = P + 4G
-                if (current_key_value + 3 < upper_bound_) { 
-                    if (!ECC::batch_add_4G(p[0], p[1], p[2], p[3], worker_ecc_context)) {
-                        std::cerr << Config::current_time() << "Worker " << worker_id << ": Failed to batch add 4G.\n";
-                        running_ = false;
-                        break;
-                    }
+                // Advance current point by 256G
+                if (current_key_value + 256 <= upper_bound_) { 
+                    ::Point next_p = worker_ecc_context.get()->AddDirect(current_point.get_raw(), G256);
+                    current_point.get_raw().Set(next_p);
                 }
 
                 // Update worker's current private key for checkpointing

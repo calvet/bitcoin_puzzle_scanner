@@ -52,8 +52,8 @@ namespace ECC {
     // Alias to match old API
     using Point = PointWrapper;
 
-    // Batch add 4G to 4 points simultaneously
-    bool batch_add_4G(PointWrapper& p0, PointWrapper& p1, PointWrapper& p2, PointWrapper& p3, const Context& ctx);
+    // Batch generate 256 points: out_points[0] = base, out_points[i] = base + G_table[i-1]
+    bool batch_generate_255(const PointWrapper& base, const std::vector<::Point>& g_table, std::vector<::Point>& out_points, const Context& ctx);
 
 }
 
