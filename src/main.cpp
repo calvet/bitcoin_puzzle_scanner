@@ -163,16 +163,7 @@ int main() {
             std::cout << Config::current_time() << "Enter Telegram Chat ID (e.g., 1504239762): ";
             std::getline(std::cin, telegram_chat_id);
 
-            if (!telegram_token.empty() && !telegram_chat_id.empty()) {
-                std::cout << Config::current_time() << "Sending test message to Telegram...\n";
-#ifdef _WIN32
-                std::string null_dev = " > NUL 2>&1";
-#else
-                std::string null_dev = " > /dev/null 2>&1";
-#endif
-                std::string cmd = "curl -s -X POST https://api.telegram.org/bot" + telegram_token + "/sendMessage -d chat_id=" + telegram_chat_id + " -d text=\"Bitcoin Puzzle Scanner: Notifications enabled successfully!\"" + null_dev;
-                std::system(cmd.c_str());
-            } else {
+            if (telegram_token.empty() || telegram_chat_id.empty()) {
                 std::cout << Config::current_time() << "Telegram token or chat ID is empty. Notifications disabled.\n";
                 telegram_token = "";
                 telegram_chat_id = "";
@@ -193,6 +184,17 @@ int main() {
             config_out.close();
             std::cout << Config::current_time() << "Configuration saved to config.txt for next run.\n";
         }
+    }
+
+    if (!telegram_token.empty() && !telegram_chat_id.empty()) {
+        std::cout << Config::current_time() << "Sending test message to Telegram...\n";
+#ifdef _WIN32
+        std::string null_dev = " > NUL 2>&1";
+#else
+        std::string null_dev = " > /dev/null 2>&1";
+#endif
+        std::string cmd = "curl -s -X POST https://api.telegram.org/bot" + telegram_token + "/sendMessage -d chat_id=" + telegram_chat_id + " -d text=\"Bitcoin Puzzle Scanner: Notifications enabled successfully!\"" + null_dev;
+        std::system(cmd.c_str());
     }
 
     const auto& puzzles = Config::GetPuzzles();

@@ -2,15 +2,21 @@ cmake_minimum_required(VERSION 3.15)
 
 project(BitcoinPuzzleScanner LANGUAGES C CXX)
 
+# Default to Release build type if none is specified
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  message(STATUS "Setting build type to 'Release' as none was specified.")
+  set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
+endif()
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Compiler warnings
+# Compiler warnings and optimizations
 if(MSVC)
-    add_compile_options(/W4 /arch:AVX2 /wd4996)
+    add_compile_options(/W4 /arch:AVX2 /wd4996 /O2)
 else()
-    add_compile_options(-Wall -Wextra -msse4.1 -mavx -mavx2)
+    add_compile_options(-Wall -Wextra -msse4.1 -mavx -mavx2 -O3)
 endif()
 
 # Include directories
